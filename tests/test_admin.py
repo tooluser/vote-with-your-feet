@@ -111,3 +111,63 @@ def describe_admin_poll_listing():
         response = client.get('/admin/', follow_redirects=False)
         assert response.status_code == 403
 
+
+def describe_poll_creation():
+    
+    def it_creates_new_poll_via_post(client, db_session):
+        response = client.post('/admin/polls?secret=test-secret', data={
+            'question': 'New Question?',
+            'answer_a': 'Option A',
+            'answer_b': 'Option B'
+        }, follow_redirects=False)
+        
+        assert response.status_code == 302
+        
+        poll = db_session.query(Poll).filter_by(question='New Question?').first()
+        assert poll is not None
+        assert poll.answer_a == 'Option A'
+        assert poll.answer_b == 'Option B'
+        assert poll.is_active is False
+    
+    def it_validates_poll_fields_are_non_empty(client, db_session):
+        response = client.post('/admin/polls?secret=test-secret', data={
+            'question': '',
+            'answer_a': 'Option A',
+            'answer_b': 'Option B'
+        }, follow_redirects=True)
+        
+        assert response.status_code == 200
+        assert b'required' in response.data or b'error' in response.data.lower()
+        
+        poll_count = db_session.query(Poll).count()
+        assert poll_count == 0
+    
+    def it_sets_new_poll_as_inactive_by_default(client, db_session):
+        client.post('/admin/polls?secret=test-secret', data={
+            'question': 'Test?',
+            'answer_a': 'A',
+            'answer_b': 'B'
+        })
+        
+        poll = db_session.query(Poll).first()
+        assert poll.is_active is False
+    
+    def it_redirects_to_admin_page_after_creation(client, db_session):
+        response = client.post('/admin/polls?secret=test-secret', data={
+            'question': 'Test?',
+            'answer_a': 'A',
+            'answer_b': 'B'
+        }, follow_redirects=False)
+        
+        assert response.status_code == 302
+        assert '/admin' in response.location
+    
+    def it_requires_authentication(client):
+        response = client.post('/admin/polls', data={
+            'question': 'Test?',
+            'answer_a': 'A',
+            'answer_b': 'B'
+        })
+        
+        assert response.status_code == 403
+

@@ -10,6 +10,35 @@
     <div class="container">
         <h1>Poll Administration</h1>
         
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="create-poll-form">
+            <h2>Create New Poll</h2>
+            <form method="POST" action="{{ url_for('admin.create_poll', secret=request.args.get('secret')) }}">
+                <div class="form-group">
+                    <label for="question">Question:</label>
+                    <input type="text" id="question" name="question" required>
+                </div>
+                <div class="form-group">
+                    <label for="answer_a">Answer A:</label>
+                    <input type="text" id="answer_a" name="answer_a" required>
+                </div>
+                <div class="form-group">
+                    <label for="answer_b">Answer B:</label>
+                    <input type="text" id="answer_b" name="answer_b" required>
+                </div>
+                <button type="submit" class="btn-primary">Create Poll</button>
+            </form>
+        </div>
+        
         {% if polls %}
         <div class="polls-list">
             <h2>All Polls</h2>

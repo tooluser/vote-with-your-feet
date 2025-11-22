@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.middleware.auth import require_admin_secret
 from app.database import get_session
 from app.models import Poll
@@ -23,6 +23,34 @@ def index():
         })
     
     return render_template('admin.html', polls=polls_with_counts)
+
+
+@admin_bp.route('/polls', methods=['POST'])
+@require_admin_secret
+def create_poll():
+    """Create a new poll"""
+    session = get_session()
+    
+    question = request.form.get('question', '').strip()
+    answer_a = request.form.get('answer_a', '').strip()
+    answer_b = request.form.get('answer_b', '').strip()
+    
+    if not question or not answer_a or not answer_b:
+        flash('All fields are required')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+    
+    poll = Poll(
+        question=question,
+        answer_a=answer_a,
+        answer_b=answer_b,
+        is_active=False
+    )
+    
+    session.add(poll)
+    session.commit()
+    
+    flash('Poll created successfully')
+    return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
 
 @admin_bp.route('/test')
