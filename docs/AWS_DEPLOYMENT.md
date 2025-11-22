@@ -15,7 +15,7 @@ Create a `.env` file with the following variables:
 
 ```bash
 ADMIN_SECRET=your-secure-secret-here
-DATABASE_URL=sqlite:///votes.db
+DATABASE_URL=sqlite:////app/data/votes.db
 SECRET_KEY=your-flask-secret-key
 ```
 
@@ -46,8 +46,12 @@ SECRET_KEY=your-flask-secret-key
    - Go to Lightsail Console
    - Select your container service
    - Create a deployment with the pushed image
-   - Set environment variables: `ADMIN_SECRET`, `DATABASE_URL`, `SECRET_KEY`
+   - Set environment variables:
+     - `ADMIN_SECRET`: your-secure-secret
+     - `DATABASE_URL`: `sqlite:////app/data/votes.db`
+     - `SECRET_KEY`: your-flask-secret-key
    - Configure port 5000 as public endpoint
+   - **Note**: Lightsail containers are stateless. For data persistence, consider using EFS or EC2 deployment
    - Deploy
 
 4. **Access Your Application**
@@ -90,8 +94,11 @@ SECRET_KEY=your-flask-secret-key
 
    # Create .env file
    echo "ADMIN_SECRET=your-secret" > .env
-   echo "DATABASE_URL=sqlite:///votes.db" >> .env
+   echo "DATABASE_URL=sqlite:////app/data/votes.db" >> .env
    echo "SECRET_KEY=your-key" >> .env
+   
+   # Create data directory for persistence
+   mkdir -p data
 
    # Run with docker-compose
    docker-compose up -d
@@ -213,13 +220,25 @@ aws ssm put-parameter \
 ### SQLite (Default)
 
 - Good for: Small deployments, single instance
-- Persistence: Mount volume or use EFS
+- Persistence: Requires persistent volume or EFS
+- Database location: `/app/data/votes.db` (mounted via volume)
 - Backup: Periodic copies to S3
 
-```bash
-# Backup script
-aws s3 cp votes.db s3://your-bucket/backups/votes-$(date +%Y%m%d).db
+**Important**: The application uses SQLite as a file-based database. The database file is automatically created at first run. For Docker deployments, ensure the `/app/data` directory is mounted to a persistent volume:
+
+```yaml
+# In docker-compose.yml (already configured)
+volumes:
+  - ./data:/app/data  # Maps local ./data to container /app/data
 ```
+
+**Backup script**:
+```bash
+# Local/EC2 backup
+aws s3 cp data/votes.db s3://your-bucket/backups/votes-$(date +%Y%m%d).db
+```
+
+**For Lightsail containers**: Note that Lightsail container storage is ephemeral. Data will be lost on container restart. Consider EC2 with volumes or ECS with EFS for persistent SQLite storage.
 
 ### PostgreSQL on RDS
 

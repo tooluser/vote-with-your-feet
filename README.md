@@ -25,9 +25,11 @@ Set environment variables (or create a `.env` file):
 
 ```bash
 ADMIN_SECRET=your-secure-secret
-DATABASE_URL=sqlite:///votes.db
+DATABASE_URL=sqlite:///data/votes.db  # For local dev; Docker uses /app/data/votes.db
 SECRET_KEY=your-flask-secret-key
 ```
+
+The database file will be created automatically on first run. When using Docker, the database persists in the `./data` directory on your host machine.
 
 ## Running the Application
 

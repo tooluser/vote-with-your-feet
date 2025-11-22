@@ -7,7 +7,7 @@ services:
       - "5000:5000"
     environment:
       - ADMIN_SECRET=${ADMIN_SECRET:-changeme}
-      - DATABASE_URL=sqlite:///votes.db
+      - DATABASE_URL=sqlite:////app/data/votes.db
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key}
     volumes:
       - ./data:/app/data

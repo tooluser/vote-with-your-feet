@@ -10,6 +10,8 @@ RUN uv sync --frozen
 
 COPY . .
 
+RUN mkdir -p /app/data
+
 EXPOSE 5000
 
 ENV PYTHONUNBUFFERED=1
