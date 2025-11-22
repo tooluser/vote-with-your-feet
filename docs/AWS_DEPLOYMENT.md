@@ -23,9 +23,10 @@ SECRET_KEY=your-flask-secret-key
 
 **Cost**: $5-10/month
 
-### Steps:
+### Steps
 
 1. **Create a Lightsail Container Service**
+
    ```bash
    aws lightsail create-container-service \
      --service-name vote-poll \
@@ -34,6 +35,7 @@ SECRET_KEY=your-flask-secret-key
    ```
 
 2. **Build and Push Docker Image**
+
    ```bash
    docker build -t vote-poll:latest .
    aws lightsail push-container-image \
@@ -64,7 +66,7 @@ SECRET_KEY=your-flask-secret-key
 
 **Cost**: $5-20/month (t2.micro/t2.small)
 
-### Steps:
+### Steps
 
 1. **Launch EC2 Instance**
    - AMI: Amazon Linux 2023 or Ubuntu 22.04
@@ -72,6 +74,7 @@ SECRET_KEY=your-flask-secret-key
    - Security group: Allow ports 22, 80, 443, 5000
 
 2. **Install Docker**
+
    ```bash
    # Amazon Linux 2023
    sudo yum update -y
@@ -88,6 +91,7 @@ SECRET_KEY=your-flask-secret-key
    ```
 
 3. **Clone Repository and Deploy**
+
    ```bash
    git clone <your-repo-url>
    cd vote_with_your_feet
@@ -96,7 +100,7 @@ SECRET_KEY=your-flask-secret-key
    echo "ADMIN_SECRET=your-secret" > .env
    echo "DATABASE_URL=sqlite:////app/data/votes.db" >> .env
    echo "SECRET_KEY=your-key" >> .env
-   
+
    # Create data directory for persistence
    mkdir -p data
 
@@ -105,11 +109,13 @@ SECRET_KEY=your-flask-secret-key
    ```
 
 4. **Configure Nginx (Optional, for production)**
+
    ```bash
    sudo apt install nginx -y
    ```
 
    Create `/etc/nginx/sites-available/vote-poll`:
+
    ```nginx
    server {
        listen 80;
@@ -129,14 +135,16 @@ SECRET_KEY=your-flask-secret-key
 
 **Cost**: $15-30/month
 
-### Steps:
+### Steps
 
 1. **Create ECS Cluster**
+
    ```bash
    aws ecs create-cluster --cluster-name vote-poll-cluster
    ```
 
 2. **Push Image to ECR**
+
    ```bash
    # Create ECR repository
    aws ecr create-repository --repository-name vote-poll
@@ -174,6 +182,7 @@ SECRET_KEY=your-flask-secret-key
 ### Security Group Rules
 
 **For EC2/Lightsail:**
+
 - Port 22 (SSH): Your IP only
 - Port 80 (HTTP): 0.0.0.0/0
 - Port 443 (HTTPS): 0.0.0.0/0
@@ -233,6 +242,7 @@ volumes:
 ```
 
 **Backup script**:
+
 ```bash
 # Local/EC2 backup
 aws s3 cp data/votes.db s3://your-bucket/backups/votes-$(date +%Y%m%d).db
@@ -296,6 +306,7 @@ aws s3 cp "backups/votes_$DATE.db" s3://your-backup-bucket/
 ```
 
 Run with cron:
+
 ```bash
 0 */6 * * * /path/to/backup.sh
 ```
@@ -303,6 +314,7 @@ Run with cron:
 ## Scaling Considerations
 
 For high traffic:
+
 1. Use RDS PostgreSQL instead of SQLite
 2. Deploy multiple ECS tasks behind ALB
 3. Use ElastiCache for session management
@@ -319,7 +331,7 @@ For high traffic:
 ## Support
 
 For issues or questions, refer to AWS documentation:
+
 - [Lightsail Containers](https://aws.amazon.com/lightsail/features/containers/)
 - [ECS Documentation](https://docs.aws.amazon.com/ecs/)
 - [EC2 User Guide](https://docs.aws.amazon.com/ec2/)
-

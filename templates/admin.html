@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poll Admin</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
+
 <body>
     <div class="container">
         <h1>Poll Administration</h1>
 
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="flash-messages">
-                {% for message in messages %}
-                <div class="flash-message">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+            <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         <div class="create-poll-form">
@@ -57,7 +59,8 @@
                         <td class="col-question">
                             <div class="question-cell">
                                 <span class="question-text">{{ item.poll.question }}</span>
-                                <span class="created-date">Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                <span class="created-date">Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M')
+                                    }}</span>
                             </div>
                         </td>
                         <td class="col-answer">
@@ -76,7 +79,8 @@
                             {% if item.poll.is_active %}
                             <span class="status-active">Active</span>
                             {% else %}
-                            <form method="POST" action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}">
+                            <form method="POST"
+                                action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}">
                                 <button type="submit" class="btn-activate">Activate</button>
                             </form>
                             {% endif %}
@@ -91,5 +95,5 @@
         {% endif %}
     </div>
 </body>
-</html>
 
+</html>

@@ -17,7 +17,7 @@ body {
     color: white;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .question-bar h1 {
@@ -102,4 +102,3 @@ body {
 .no-poll p {
     font-size: 24px;
 }
-

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poll Display</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/display.css') }}">
 </head>
+
 <body>
     {% if poll %}
     <div class="question-bar">
@@ -14,7 +16,8 @@
 
     <div class="split-container">
         <div class="split-panel panel-a">
-            <div class="vertical-bar" id="vertical-bar-a" style="height: {{ (count_a / (count_a + count_b) * 100) if (count_a + count_b) > 0 else 0 }}%"></div>
+            <div class="vertical-bar" id="vertical-bar-a"
+                style="height: {{ (count_a / (count_a + count_b) * 100) if (count_a + count_b) > 0 else 0 }}%"></div>
             <div class="answer-content">
                 <h2 id="answer-a">{{ poll.answer_a }}</h2>
                 <div class="vote-count" id="count-a">{{ count_a }}</div>
@@ -22,7 +25,8 @@
         </div>
 
         <div class="split-panel panel-b">
-            <div class="vertical-bar" id="vertical-bar-b" style="height: {{ (count_b / (count_a + count_b) * 100) if (count_a + count_b) > 0 else 0 }}%"></div>
+            <div class="vertical-bar" id="vertical-bar-b"
+                style="height: {{ (count_b / (count_a + count_b) * 100) if (count_a + count_b) > 0 else 0 }}%"></div>
             <div class="answer-content">
                 <h2 id="answer-b">{{ poll.answer_b }}</h2>
                 <div class="vote-count" id="count-b">{{ count_b }}</div>
@@ -39,5 +43,5 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='js/display.js') }}"></script>
 </body>
-</html>
 
+</html>

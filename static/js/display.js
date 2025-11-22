@@ -1,16 +1,16 @@
 // WebSocket client for real-time updates
 const socket = io();
 
-socket.on('connect', function() {
+socket.on('connect', function () {
     console.log('Connected to server');
 });
 
-socket.on('vote_cast', function(data) {
+socket.on('vote_cast', function (data) {
     console.log('Vote cast:', data);
     updateDisplay();
 });
 
-socket.on('poll_activated', function(data) {
+socket.on('poll_activated', function (data) {
     console.log('Poll activated:', data);
     location.reload();
 });
