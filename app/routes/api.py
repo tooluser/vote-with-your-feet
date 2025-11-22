@@ -1,8 +1,8 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from app.database import get_session
 from app.models import Poll, Vote
 
-api_bp = Blueprint('api', __name__)
+api_bp = Blueprint('api', __name__, template_folder='../../templates')
 
 
 @api_bp.route('/vote', methods=['POST'])
@@ -29,4 +29,27 @@ def vote():
     session.commit()
     
     return jsonify({'success': True, 'poll_id': active_poll.id}), 200
+
+
+@api_bp.route('/display/data')
+def display_data():
+    """Get current active poll data for display"""
+    session = get_session()
+    active_poll = session.query(Poll).filter_by(is_active=True).first()
+    
+    if not active_poll:
+        return jsonify({'poll': None}), 200
+    
+    counts = active_poll.get_vote_counts(session)
+    
+    return jsonify({
+        'poll': {
+            'id': active_poll.id,
+            'question': active_poll.question,
+            'answer_a': active_poll.answer_a,
+            'answer_b': active_poll.answer_b,
+            'count_a': counts['A'],
+            'count_b': counts['B']
+        }
+    }), 200
 
