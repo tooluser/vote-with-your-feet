@@ -2,21 +2,22 @@ import pytest
 from flask import Flask
 from flask_socketio import SocketIO
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, scoped_session
-from app.routes.admin import admin_bp
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+from app import database as db_module
 from app.config import Config
 from app.models import Base, Poll, Vote
-from app import database as db_module
+from app.routes.admin import admin_bp
 
 
 @pytest.fixture
 def app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    app.config['ADMIN_SECRET'] = 'test-secret'
-    app.config['TESTING'] = True
+    app.config["ADMIN_SECRET"] = "test-secret"
+    app.config["TESTING"] = True
 
-    engine = create_engine('sqlite:///:memory:')
+    engine = create_engine("sqlite:///:memory:")
 
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_conn, connection_record):
@@ -29,7 +30,7 @@ def app():
 
     db_module._session = Session
 
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(admin_bp, url_prefix="/admin")
 
     yield app
 
@@ -49,24 +50,24 @@ def db_session(app):
 def describe_admin_authentication():
 
     def it_requires_secret_query_parameter_or_header(client):
-        response = client.get('/admin/test')
+        response = client.get("/admin/test")
         assert response.status_code == 403
 
     def it_rejects_requests_without_valid_secret(client):
-        response = client.get('/admin/test?secret=wrong-secret')
+        response = client.get("/admin/test?secret=wrong-secret")
         assert response.status_code == 403
 
-        response = client.get('/admin/test', headers={'X-Admin-Secret': 'wrong-secret'})
+        response = client.get("/admin/test", headers={"X-Admin-Secret": "wrong-secret"})
         assert response.status_code == 403
 
     def it_allows_access_with_valid_secret(client):
-        response = client.get('/admin/test?secret=test-secret')
+        response = client.get("/admin/test?secret=test-secret")
         assert response.status_code == 200
-        assert b'Admin Test Route' in response.data
+        assert b"Admin Test Route" in response.data
 
-        response = client.get('/admin/test', headers={'X-Admin-Secret': 'test-secret'})
+        response = client.get("/admin/test", headers={"X-Admin-Secret": "test-secret"})
         assert response.status_code == 200
-        assert b'Admin Test Route' in response.data
+        assert b"Admin Test Route" in response.data
 
 
 def describe_admin_poll_listing():
@@ -82,93 +83,96 @@ def describe_admin_poll_listing():
         db_session.add_all([vote1, vote2])
         db_session.commit()
 
-        response = client.get('/admin/?secret=test-secret')
+        response = client.get("/admin/?secret=test-secret")
         assert response.status_code == 200
-        assert b'Question 1?' in response.data
-        assert b'Question 2?' in response.data
-        assert b'A1' in response.data
-        assert b'B1' in response.data
+        assert b"Question 1?" in response.data
+        assert b"Question 2?" in response.data
+        assert b"A1" in response.data
+        assert b"B1" in response.data
 
     def it_highlights_active_poll_visually(client, db_session):
-        poll1 = Poll(question="Active Poll?", answer_a="A", answer_b="B", is_active=True)
+        poll1 = Poll(
+            question="Active Poll?", answer_a="A", answer_b="B", is_active=True
+        )
         poll2 = Poll(question="Inactive Poll?", answer_a="C", answer_b="D")
         db_session.add_all([poll1, poll2])
         db_session.commit()
 
-        response = client.get('/admin/?secret=test-secret')
+        response = client.get("/admin/?secret=test-secret")
         assert response.status_code == 200
-        assert b'row-active' in response.data or b'status-active' in response.data
+        assert b"row-active" in response.data or b"status-active" in response.data
 
     def it_shows_zero_votes_for_new_polls(client, db_session):
         poll = Poll(question="New Poll?", answer_a="A", answer_b="B")
         db_session.add(poll)
         db_session.commit()
 
-        response = client.get('/admin/?secret=test-secret')
+        response = client.get("/admin/?secret=test-secret")
         assert response.status_code == 200
-        assert b'New Poll?' in response.data
+        assert b"New Poll?" in response.data
 
     def it_requires_authentication(client):
-        response = client.get('/admin/', follow_redirects=False)
+        response = client.get("/admin/", follow_redirects=False)
         assert response.status_code == 403
 
 
 def describe_poll_creation():
 
     def it_creates_new_poll_via_post(client, db_session):
-        response = client.post('/admin/polls?secret=test-secret', data={
-            'question': 'New Question?',
-            'answer_a': 'Option A',
-            'answer_b': 'Option B'
-        }, follow_redirects=False)
+        response = client.post(
+            "/admin/polls?secret=test-secret",
+            data={
+                "question": "New Question?",
+                "answer_a": "Option A",
+                "answer_b": "Option B",
+            },
+            follow_redirects=False,
+        )
 
         assert response.status_code == 302
 
-        poll = db_session.query(Poll).filter_by(question='New Question?').first()
+        poll = db_session.query(Poll).filter_by(question="New Question?").first()
         assert poll is not None
-        assert poll.answer_a == 'Option A'
-        assert poll.answer_b == 'Option B'
+        assert poll.answer_a == "Option A"
+        assert poll.answer_b == "Option B"
         assert poll.is_active is False
 
     def it_validates_poll_fields_are_non_empty(client, db_session):
-        response = client.post('/admin/polls?secret=test-secret', data={
-            'question': '',
-            'answer_a': 'Option A',
-            'answer_b': 'Option B'
-        }, follow_redirects=True)
+        response = client.post(
+            "/admin/polls?secret=test-secret",
+            data={"question": "", "answer_a": "Option A", "answer_b": "Option B"},
+            follow_redirects=True,
+        )
 
         assert response.status_code == 200
-        assert b'required' in response.data or b'error' in response.data.lower()
+        assert b"required" in response.data or b"error" in response.data.lower()
 
         poll_count = db_session.query(Poll).count()
         assert poll_count == 0
 
     def it_sets_new_poll_as_inactive_by_default(client, db_session):
-        client.post('/admin/polls?secret=test-secret', data={
-            'question': 'Test?',
-            'answer_a': 'A',
-            'answer_b': 'B'
-        })
+        client.post(
+            "/admin/polls?secret=test-secret",
+            data={"question": "Test?", "answer_a": "A", "answer_b": "B"},
+        )
 
         poll = db_session.query(Poll).first()
         assert poll.is_active is False
 
     def it_redirects_to_admin_page_after_creation(client, db_session):
-        response = client.post('/admin/polls?secret=test-secret', data={
-            'question': 'Test?',
-            'answer_a': 'A',
-            'answer_b': 'B'
-        }, follow_redirects=False)
+        response = client.post(
+            "/admin/polls?secret=test-secret",
+            data={"question": "Test?", "answer_a": "A", "answer_b": "B"},
+            follow_redirects=False,
+        )
 
         assert response.status_code == 302
-        assert '/admin' in response.location
+        assert "/admin" in response.location
 
     def it_requires_authentication(client):
-        response = client.post('/admin/polls', data={
-            'question': 'Test?',
-            'answer_a': 'A',
-            'answer_b': 'B'
-        })
+        response = client.post(
+            "/admin/polls", data={"question": "Test?", "answer_a": "A", "answer_b": "B"}
+        )
 
         assert response.status_code == 403
 
@@ -182,8 +186,10 @@ def describe_poll_activation():
         db_session.add_all([poll1, poll2, poll3])
         db_session.commit()
 
-        response = client.post(f'/admin/polls/{poll2.id}/activate?secret=test-secret',
-                              follow_redirects=False)
+        response = client.post(
+            f"/admin/polls/{poll2.id}/activate?secret=test-secret",
+            follow_redirects=False,
+        )
 
         assert response.status_code == 302
 
@@ -206,7 +212,7 @@ def describe_poll_activation():
         db_session.add(poll3)
         db_session.commit()
 
-        client.post(f'/admin/polls/{poll3.id}/activate?secret=test-secret')
+        client.post(f"/admin/polls/{poll3.id}/activate?secret=test-secret")
 
         db_session.expire_all()
         active_polls = db_session.query(Poll).filter_by(is_active=True).all()
@@ -219,6 +225,5 @@ def describe_poll_activation():
         db_session.add(poll)
         db_session.commit()
 
-        response = client.post(f'/admin/polls/{poll.id}/activate')
+        response = client.post(f"/admin/polls/{poll.id}/activate")
         assert response.status_code == 403
-
