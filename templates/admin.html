@@ -42,35 +42,49 @@
         {% if polls %}
         <div class="polls-list">
             <h2>All Polls</h2>
-            {% for item in polls %}
-            <div class="poll-card {% if item.poll.is_active %}poll-active{% endif %}">
-                {% if item.poll.is_active %}
-                <span class="badge-active">ACTIVE</span>
-                {% endif %}
-
-                <h3>{{ item.poll.question }}</h3>
-
-                <div class="poll-answers">
-                    <div class="answer">
-                        <strong>{{ item.poll.answer_a }}</strong>
-                        <span class="vote-count">{{ item.count_a }} votes</span>
-                    </div>
-                    <div class="answer">
-                        <strong>{{ item.poll.answer_b }}</strong>
-                        <span class="vote-count">{{ item.count_b }} votes</span>
-                    </div>
-                </div>
-
-                <div class="poll-meta">
-                    <span>Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
-                    {% if not item.poll.is_active %}
-                    <form method="POST" action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}" style="display: inline;">
-                        <button type="submit" class="btn-activate">Activate</button>
-                    </form>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
+            <table class="polls-table">
+                <thead>
+                    <tr>
+                        <th class="col-question">Question</th>
+                        <th class="col-answer">Answer A</th>
+                        <th class="col-answer">Answer B</th>
+                        <th class="col-action">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in polls %}
+                    <tr class="{% if item.poll.is_active %}row-active{% endif %}">
+                        <td class="col-question">
+                            <div class="question-cell">
+                                <span class="question-text">{{ item.poll.question }}</span>
+                                <span class="created-date">Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                        </td>
+                        <td class="col-answer">
+                            <div class="answer-cell">
+                                <span class="answer-text">{{ item.poll.answer_a }}</span>
+                                <span class="vote-count">{{ item.count_a }} votes</span>
+                            </div>
+                        </td>
+                        <td class="col-answer">
+                            <div class="answer-cell">
+                                <span class="answer-text">{{ item.poll.answer_b }}</span>
+                                <span class="vote-count">{{ item.count_b }} votes</span>
+                            </div>
+                        </td>
+                        <td class="col-action">
+                            {% if item.poll.is_active %}
+                            <span class="status-active">Active</span>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}">
+                                <button type="submit" class="btn-activate">Activate</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         {% else %}
         <p>No polls yet.</p>
