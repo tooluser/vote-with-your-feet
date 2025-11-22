@@ -22,7 +22,7 @@ function updateDisplay() {
             if (data.poll) {
                 const countA = document.getElementById('count-a');
                 const countB = document.getElementById('count-b');
-                
+
                 if (countA) countA.textContent = data.poll.count_a;
                 if (countB) countB.textContent = data.poll.count_b;
             }

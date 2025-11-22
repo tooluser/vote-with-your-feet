@@ -38,9 +38,10 @@ uv run python app/main.py
 ```
 
 The application will be available at:
-- Display: http://localhost:5000/display
-- Admin: http://localhost:5000/admin?secret=YOUR_SECRET
-- API: http://localhost:5000/api/vote
+
+- Display: <http://localhost:5000/display>
+- Admin: <http://localhost:5000/admin?secret=YOUR_SECRET>
+- API: <http://localhost:5000/api/vote>
 
 ### Docker
 
@@ -94,6 +95,7 @@ curl http://localhost:5000/api/display/data
 ## Display Interface
 
 Navigate to `/display` to see the live split-screen view with:
+
 - Poll question at the top
 - Answer A on the left (blue) with vote count
 - Answer B on the right (orange) with vote count
@@ -145,4 +147,3 @@ vote_with_your_feet/
 ## License
 
 MIT
-

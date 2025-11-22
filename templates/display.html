@@ -11,7 +11,7 @@
     <div class="question-bar">
         <h1 id="question">{{ poll.question }}</h1>
     </div>
-    
+
     <div class="split-container">
         <div class="split-panel panel-a">
             <div class="answer-content">
@@ -19,7 +19,7 @@
                 <div class="vote-count" id="count-a">{{ count_a }}</div>
             </div>
         </div>
-        
+
         <div class="split-panel panel-b">
             <div class="answer-content">
                 <h2 id="answer-b">{{ poll.answer_b }}</h2>
@@ -33,7 +33,7 @@
         <p>Waiting for administrator to activate a poll...</p>
     </div>
     {% endif %}
-    
+
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='js/display.js') }}"></script>
 </body>

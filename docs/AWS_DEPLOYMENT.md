@@ -75,7 +75,7 @@ SECRET_KEY=your-flask-secret-key
    sudo systemctl start docker
    sudo systemctl enable docker
    sudo usermod -a -G docker ec2-user
-   
+
    # Ubuntu
    sudo apt update
    sudo apt install docker.io docker-compose -y
@@ -87,12 +87,12 @@ SECRET_KEY=your-flask-secret-key
    ```bash
    git clone <your-repo-url>
    cd vote_with_your_feet
-   
+
    # Create .env file
    echo "ADMIN_SECRET=your-secret" > .env
    echo "DATABASE_URL=sqlite:///votes.db" >> .env
    echo "SECRET_KEY=your-key" >> .env
-   
+
    # Run with docker-compose
    docker-compose up -d
    ```
@@ -101,13 +101,13 @@ SECRET_KEY=your-flask-secret-key
    ```bash
    sudo apt install nginx -y
    ```
-   
+
    Create `/etc/nginx/sites-available/vote-poll`:
    ```nginx
    server {
        listen 80;
        server_name your-domain.com;
-       
+
        location / {
            proxy_pass http://localhost:5000;
            proxy_http_version 1.1;
@@ -133,12 +133,12 @@ SECRET_KEY=your-flask-secret-key
    ```bash
    # Create ECR repository
    aws ecr create-repository --repository-name vote-poll
-   
+
    # Get login token
    aws ecr get-login-password --region us-east-1 | \
      docker login --username AWS --password-stdin \
      <account-id>.dkr.ecr.us-east-1.amazonaws.com
-   
+
    # Build and push
    docker build -t vote-poll .
    docker tag vote-poll:latest \

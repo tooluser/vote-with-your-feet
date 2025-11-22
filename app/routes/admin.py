@@ -58,16 +58,16 @@ def create_poll():
 def activate_poll(poll_id):
     """Activate a poll and deactivate all others"""
     session = get_session()
-    
+
     Poll.activate_poll(session, poll_id)
     session.commit()
-    
+
     try:
         from app import socketio
         socketio.emit('poll_activated', {'poll_id': poll_id})
     except:
         pass
-    
+
     flash('Poll activated')
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
