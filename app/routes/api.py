@@ -1,11 +1,13 @@
 from flask import Blueprint, request, jsonify, render_template
 from app.database import get_session
 from app.models import Poll, Vote
+from app.middleware.auth import require_vote_password
 
 api_bp = Blueprint('api', __name__, template_folder='../../templates')
 
 
 @api_bp.route('/vote', methods=['POST'])
+@require_vote_password
 def vote():
     """Register a vote for the active poll"""
     session = get_session()

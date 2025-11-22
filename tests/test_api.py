@@ -47,7 +47,7 @@ def db_session(app):
 
 def describe_vote_api():
 
-    def it_registers_vote_for_active_poll(client, db_session):
+    def it_requires_vote_password(client, db_session):
         poll = Poll(question="Test?", answer_a="A", answer_b="B", is_active=True)
         db_session.add(poll)
         db_session.commit()
@@ -55,6 +55,18 @@ def describe_vote_api():
         response = client.post('/api/vote',
                               data=json.dumps({'answer': 'A'}),
                               content_type='application/json')
+
+        assert response.status_code == 403
+
+    def it_registers_vote_for_active_poll(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B", is_active=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.post('/api/vote',
+                              data=json.dumps({'answer': 'A'}),
+                              content_type='application/json',
+                              headers={'X-Vote-Password': 'vote123'})
 
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -72,7 +84,8 @@ def describe_vote_api():
 
         response = client.post('/api/vote',
                               data=json.dumps({'answer': 'A'}),
-                              content_type='application/json')
+                              content_type='application/json',
+                              headers={'X-Vote-Password': 'vote123'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -86,7 +99,8 @@ def describe_vote_api():
 
         response = client.post('/api/vote',
                               data=json.dumps({'answer': 'C'}),
-                              content_type='application/json')
+                              content_type='application/json',
+                              headers={'X-Vote-Password': 'vote123'})
 
         assert response.status_code == 400
         data = json.loads(response.data)
@@ -100,7 +114,8 @@ def describe_vote_api():
 
         client.post('/api/vote',
                    data=json.dumps({'answer': 'A'}),
-                   content_type='application/json')
+                   content_type='application/json',
+                   headers={'X-Vote-Password': 'vote123'})
 
         vote = db_session.query(Vote).first()
         assert vote.timestamp is not None

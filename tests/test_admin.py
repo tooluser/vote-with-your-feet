@@ -97,7 +97,7 @@ def describe_admin_poll_listing():
 
         response = client.get('/admin/?secret=test-secret')
         assert response.status_code == 200
-        assert b'poll-active' in response.data or b'ACTIVE' in response.data
+        assert b'row-active' in response.data or b'status-active' in response.data
 
     def it_shows_zero_votes_for_new_polls(client, db_session):
         poll = Poll(question="New Poll?", answer_a="A", answer_b="B")

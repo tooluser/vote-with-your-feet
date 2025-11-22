@@ -18,3 +18,18 @@ def require_admin_secret(f):
 
     return decorated_function
 
+
+def require_vote_password(f):
+    """Decorator to validate vote password from header"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        password_from_header = request.headers.get('X-Vote-Password')
+        expected_password = current_app.config.get('VOTE_PASSWORD')
+
+        if password_from_header == expected_password:
+            return f(*args, **kwargs)
+
+        abort(403)
+
+    return decorated_function
+
