@@ -137,5 +137,23 @@ h2 {
     font-size: 12px;
     padding-top: 10px;
     border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-activate {
+    background-color: #22c55e;
+    color: white;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-activate:hover {
+    background-color: #16a34a;
 }
 

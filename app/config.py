@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     """Application configuration"""
-    
+
     ADMIN_SECRET = os.getenv('ADMIN_SECRET', 'changeme')
     DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///votes.db')
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')

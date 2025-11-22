@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <h1>Poll Administration</h1>
-        
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
             <div class="flash-messages">
@@ -19,7 +19,7 @@
             </div>
             {% endif %}
         {% endwith %}
-        
+
         <div class="create-poll-form">
             <h2>Create New Poll</h2>
             <form method="POST" action="{{ url_for('admin.create_poll', secret=request.args.get('secret')) }}">
@@ -38,7 +38,7 @@
                 <button type="submit" class="btn-primary">Create Poll</button>
             </form>
         </div>
-        
+
         {% if polls %}
         <div class="polls-list">
             <h2>All Polls</h2>
@@ -47,9 +47,9 @@
                 {% if item.poll.is_active %}
                 <span class="badge-active">ACTIVE</span>
                 {% endif %}
-                
+
                 <h3>{{ item.poll.question }}</h3>
-                
+
                 <div class="poll-answers">
                     <div class="answer">
                         <strong>{{ item.poll.answer_a }}</strong>
@@ -60,9 +60,14 @@
                         <span class="vote-count">{{ item.count_b }} votes</span>
                     </div>
                 </div>
-                
+
                 <div class="poll-meta">
                     <span>Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% if not item.poll.is_active %}
+                    <form method="POST" action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}" style="display: inline;">
+                        <button type="submit" class="btn-activate">Activate</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
