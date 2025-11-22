@@ -28,6 +28,12 @@ def vote():
     session.add(vote)
     session.commit()
     
+    try:
+        from app import socketio
+        socketio.emit('vote_cast', {'poll_id': active_poll.id})
+    except:
+        pass
+    
     return jsonify({'success': True, 'poll_id': active_poll.id}), 200
 
 
