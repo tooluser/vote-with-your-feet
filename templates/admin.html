@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poll Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Poll Administration</h1>
+        
+        {% if polls %}
+        <div class="polls-list">
+            <h2>All Polls</h2>
+            {% for item in polls %}
+            <div class="poll-card {% if item.poll.is_active %}poll-active{% endif %}">
+                {% if item.poll.is_active %}
+                <span class="badge-active">ACTIVE</span>
+                {% endif %}
+                
+                <h3>{{ item.poll.question }}</h3>
+                
+                <div class="poll-answers">
+                    <div class="answer">
+                        <strong>{{ item.poll.answer_a }}</strong>
+                        <span class="vote-count">{{ item.count_a }} votes</span>
+                    </div>
+                    <div class="answer">
+                        <strong>{{ item.poll.answer_b }}</strong>
+                        <span class="vote-count">{{ item.count_b }} votes</span>
+                    </div>
+                </div>
+                
+                <div class="poll-meta">
+                    <span>Created: {{ item.poll.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No polls yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
+
