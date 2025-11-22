@@ -36,6 +36,24 @@ body {
     align-items: center;
     justify-content: center;
     padding: 40px;
+    position: relative;
+}
+
+.vertical-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    transition: height 0.6s ease-in-out;
+    z-index: 1;
+}
+
+.panel-a .vertical-bar {
+    background-color: #1e40af;
+}
+
+.panel-b .vertical-bar {
+    background-color: #d97706;
 }
 
 .panel-a {
@@ -50,6 +68,8 @@ body {
 
 .answer-content {
     text-align: center;
+    position: relative;
+    z-index: 2;
 }
 
 .answer-content h2 {
