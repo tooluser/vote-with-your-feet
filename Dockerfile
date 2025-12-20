@@ -12,9 +12,9 @@ COPY . .
 
 RUN mkdir -p /app/data
 
-EXPOSE 5000
+EXPOSE 8080
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["uv", "run", "python", "app/main.py"]
+CMD ["uv", "run", "python", "-m", "app.main"]
 

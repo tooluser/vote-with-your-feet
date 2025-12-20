@@ -1,337 +1,430 @@
-# AWS Deployment Guide
+# AWS Lightsail Deployment Guide
 
-This guide covers deploying the Vote With Your Feet polling application to AWS.
+Deploy Vote With Your Feet to AWS Lightsail with persistent SQLite storage and free HTTPS via Let's Encrypt.
+
+**Cost**: ~$5/month
+**Traffic capacity**: Easily handles 1,000+ requests/day
+**Time to deploy**: ~30 minutes
+
+---
 
 ## Prerequisites
 
-- AWS Account
-- Docker installed locally
-- AWS CLI configured
-- Domain name (optional, for HTTPS)
+- AWS Account (create one at [aws.amazon.com](https://aws.amazon.com))
+- A domain name pointed to your server (for HTTPS)
+- SSH client (Terminal on Mac/Linux, or PuTTY on Windows)
 
-## Environment Variables
+---
 
-Create a `.env` file with the following variables:
+## Step 1: Create a Lightsail Instance
 
-```bash
-ADMIN_SECRET=your-secure-secret-here
-DATABASE_URL=sqlite:////app/data/votes.db
-SECRET_KEY=your-flask-secret-key
-```
+1. Go to [Lightsail Console](https://lightsail.aws.amazon.com)
 
-## Deployment Option 1: AWS Lightsail (Recommended for Simple Deployment)
+2. Click **Create instance**
 
-**Cost**: $5-10/month
+3. Configure the instance:
+   - **Region**: Choose one close to your users
+   - **Platform**: Linux/Unix
+   - **Blueprint**: OS Only → **Ubuntu 22.04 LTS**
+   - **Instance plan**: $5/month (1 GB RAM, 1 vCPU, 40 GB SSD)
+   - **Instance name**: `vote-poll`
 
-### Steps
+4. Click **Create instance**
 
-1. **Create a Lightsail Container Service**
+5. Wait ~2 minutes for the instance to start (status: "Running")
 
-   ```bash
-   aws lightsail create-container-service \
-     --service-name vote-poll \
-     --power small \
-     --scale 1
-   ```
+---
 
-2. **Build and Push Docker Image**
+## Step 2: Configure Networking
 
-   ```bash
-   docker build -t vote-poll:latest .
-   aws lightsail push-container-image \
-     --service-name vote-poll \
-     --label vote-poll \
-     --image vote-poll:latest
-   ```
+### Open Required Ports
 
-3. **Deploy the Container**
-   - Go to Lightsail Console
-   - Select your container service
-   - Create a deployment with the pushed image
-   - Set environment variables:
-     - `ADMIN_SECRET`: your-secure-secret
-     - `DATABASE_URL`: `sqlite:////app/data/votes.db`
-     - `SECRET_KEY`: your-flask-secret-key
-   - Configure port 5000 as public endpoint
-   - **Note**: Lightsail containers are stateless. For data persistence, consider using EFS or EC2 deployment
-   - Deploy
+1. In Lightsail console, click your instance name
+2. Go to **Networking** tab
+3. Under **IPv4 Firewall**, add these rules:
+   - **HTTPS** (TCP 443) — for secure web traffic
+   - **Custom** (TCP 8080) — optional, for direct access during setup
 
-4. **Access Your Application**
-   - Lightsail will provide a public URL
-   - Admin interface: `https://your-url.amazonaws.com/admin?secret=YOUR_SECRET`
-   - Display interface: `https://your-url.amazonaws.com/display`
-   - Voting API: `https://your-url.amazonaws.com/api/vote`
+Your firewall should now allow: SSH (22), HTTP (80), HTTPS (443)
 
-## Deployment Option 2: EC2 with Docker
+### Attach a Static IP (Required for Domain)
 
-**Cost**: $5-20/month (t2.micro/t2.small)
+1. In the **Networking** tab, scroll to **Public IP**
+2. Click **Attach static IP**
+3. Create a new static IP, name it `vote-poll-ip`
+4. Note this IP address — you'll need it for DNS
 
-### Steps
+---
 
-1. **Launch EC2 Instance**
-   - AMI: Amazon Linux 2023 or Ubuntu 22.04
-   - Instance type: t2.micro or t2.small
-   - Security group: Allow ports 22, 80, 443, 5000
+## Step 3: Point Your Domain to the Server
 
-2. **Install Docker**
+In your domain registrar's DNS settings, create an **A record**:
 
-   ```bash
-   # Amazon Linux 2023
-   sudo yum update -y
-   sudo yum install docker -y
-   sudo systemctl start docker
-   sudo systemctl enable docker
-   sudo usermod -a -G docker ec2-user
+| Type | Name | Value |
+|------|------|-------|
+| A | @ (or subdomain like `vote`) | YOUR_STATIC_IP |
 
-   # Ubuntu
-   sudo apt update
-   sudo apt install docker.io docker-compose -y
-   sudo systemctl start docker
-   sudo systemctl enable docker
-   ```
-
-3. **Clone Repository and Deploy**
-
-   ```bash
-   git clone <your-repo-url>
-   cd vote_with_your_feet
-
-   # Create .env file
-   echo "ADMIN_SECRET=your-secret" > .env
-   echo "DATABASE_URL=sqlite:////app/data/votes.db" >> .env
-   echo "SECRET_KEY=your-key" >> .env
-
-   # Create data directory for persistence
-   mkdir -p data
-
-   # Run with docker-compose
-   docker-compose up -d
-   ```
-
-4. **Configure Nginx (Optional, for production)**
-
-   ```bash
-   sudo apt install nginx -y
-   ```
-
-   Create `/etc/nginx/sites-available/vote-poll`:
-
-   ```nginx
-   server {
-       listen 80;
-       server_name your-domain.com;
-
-       location / {
-           proxy_pass http://localhost:5000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection "upgrade";
-           proxy_set_header Host $host;
-       }
-   }
-   ```
-
-## Deployment Option 3: ECS Fargate
-
-**Cost**: $15-30/month
-
-### Steps
-
-1. **Create ECS Cluster**
-
-   ```bash
-   aws ecs create-cluster --cluster-name vote-poll-cluster
-   ```
-
-2. **Push Image to ECR**
-
-   ```bash
-   # Create ECR repository
-   aws ecr create-repository --repository-name vote-poll
-
-   # Get login token
-   aws ecr get-login-password --region us-east-1 | \
-     docker login --username AWS --password-stdin \
-     <account-id>.dkr.ecr.us-east-1.amazonaws.com
-
-   # Build and push
-   docker build -t vote-poll .
-   docker tag vote-poll:latest \
-     <account-id>.dkr.ecr.us-east-1.amazonaws.com/vote-poll:latest
-   docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/vote-poll:latest
-   ```
-
-3. **Create Task Definition**
-   - Use ECS Console or CLI
-   - Configure container with environment variables
-   - Allocate 512 CPU units, 1GB memory
-   - Map port 5000
-
-4. **Create Service**
-   - Launch type: Fargate
-   - Configure Application Load Balancer
-   - Target port: 5000
-
-5. **Optional: Use EFS for SQLite Persistence**
-   - Create EFS file system
-   - Mount to `/app/data` in task definition
-   - Update DATABASE_URL to use mounted path
-
-## Security Configuration
-
-### Security Group Rules
-
-**For EC2/Lightsail:**
-
-- Port 22 (SSH): Your IP only
-- Port 80 (HTTP): 0.0.0.0/0
-- Port 443 (HTTPS): 0.0.0.0/0
-- Port 5000: 0.0.0.0/0 (or behind load balancer)
-
-### Secrets Management
-
-**Store secrets in AWS Secrets Manager:**
+DNS propagation takes 5-30 minutes. Verify with:
 
 ```bash
-# Create secret
-aws secretsmanager create-secret \
-  --name vote-poll/admin-secret \
-  --secret-string "your-admin-secret"
-
-# Retrieve in application
-aws secretsmanager get-secret-value \
-  --secret-id vote-poll/admin-secret \
-  --query SecretString --output text
+dig +short yourdomain.com
 ```
 
-**Or use AWS Systems Manager Parameter Store:**
+---
+
+## Step 4: Connect to Your Server
+
+1. In Lightsail console, click your instance
+2. Click **Connect using SSH** (browser-based), or:
 
 ```bash
-aws ssm put-parameter \
-  --name /vote-poll/admin-secret \
-  --value "your-admin-secret" \
-  --type SecureString
+# Download your SSH key from Lightsail console (Account → SSH keys)
+ssh -i ~/LightsailDefaultKey.pem ubuntu@YOUR_STATIC_IP
 ```
 
-### HTTPS with AWS Certificate Manager
+---
 
-1. **Request Certificate**
-   - Use AWS Certificate Manager
-   - Validate domain ownership
+## Step 5: Install Docker
 
-2. **Configure Load Balancer**
-   - Add HTTPS listener (port 443)
-   - Attach certificate
-   - Redirect HTTP to HTTPS
-
-## Database Options
-
-### SQLite (Default)
-
-- Good for: Small deployments, single instance
-- Persistence: Requires persistent volume or EFS
-- Database location: `/app/data/votes.db` (mounted via volume)
-- Backup: Periodic copies to S3
-
-**Important**: The application uses SQLite as a file-based database. The database file is automatically created at first run. For Docker deployments, ensure the `/app/data` directory is mounted to a persistent volume:
-
-```yaml
-# In docker-compose.yml (already configured)
-volumes:
-  - ./data:/app/data  # Maps local ./data to container /app/data
-```
-
-**Backup script**:
+Run these commands on your server:
 
 ```bash
-# Local/EC2 backup
-aws s3 cp data/votes.db s3://your-bucket/backups/votes-$(date +%Y%m%d).db
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Docker
+sudo apt install -y docker.io docker-compose
+
+# Start Docker and enable on boot
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add ubuntu user to docker group (avoids needing sudo)
+sudo usermod -aG docker ubuntu
+
+# Apply group change (or log out and back in)
+newgrp docker
 ```
 
-**For Lightsail containers**: Note that Lightsail container storage is ephemeral. Data will be lost on container restart. Consider EC2 with volumes or ECS with EFS for persistent SQLite storage.
-
-### PostgreSQL on RDS
-
-- Good for: Production, multiple instances
-- Create RDS instance (db.t3.micro: ~$15/month)
+Verify Docker works:
 
 ```bash
-# Update .env
-DATABASE_URL=postgresql://user:pass@your-rds-endpoint:5432/votedb
+docker --version
 ```
 
-## IP Restriction (Optional)
+---
 
-To restrict admin access by IP, add to security group or use Nginx:
+## Step 6: Deploy the Application
 
-```nginx
-location /admin {
-    allow 203.0.113.0/24;  # Your office IP range
-    deny all;
-    proxy_pass http://localhost:5000;
+### Clone and Configure
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/vote_with_your_feet.git
+cd vote_with_your_feet
+
+# Create data directory for persistent database
+mkdir -p data
+
+# Create environment file with secure secrets
+cat > .env << 'EOF'
+ADMIN_SECRET=CHANGE_THIS_TO_A_SECURE_RANDOM_STRING
+SECRET_KEY=CHANGE_THIS_TO_ANOTHER_RANDOM_STRING
+EOF
+```
+
+Generate secure random strings for the secrets:
+
+```bash
+# Generate random secrets (copy these into your .env file)
+openssl rand -hex 32
+openssl rand -hex 32
+```
+
+### Start the Application
+
+```bash
+docker-compose up -d
+```
+
+Verify it's running:
+
+```bash
+docker-compose ps
+curl http://localhost:8080/health
+```
+
+You should see `{"status": "healthy"}`.
+
+---
+
+## Step 7: Set Up Nginx and Let's Encrypt (HTTPS)
+
+### Install Nginx and Certbot
+
+```bash
+sudo apt install -y nginx certbot python3-certbot-nginx
+```
+
+### Configure Nginx
+
+```bash
+sudo tee /etc/nginx/sites-available/vote-poll << 'EOF'
+server {
+    listen 80;
+    server_name YOUR_DOMAIN.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support (for live updates)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
 }
+EOF
 ```
 
-## Monitoring
-
-### CloudWatch Logs
-
-Configure container to send logs to CloudWatch:
-
-```python
-import logging
-logging.basicConfig(level=logging.INFO)
-```
-
-### Health Checks
-
-Add health check endpoint:
-
-```python
-@app.route('/health')
-def health():
-    return {'status': 'healthy'}, 200
-```
-
-## Backup Strategy
-
-### Database Backups
+Replace `YOUR_DOMAIN.com` with your actual domain:
 
 ```bash
+sudo sed -i 's/YOUR_DOMAIN.com/yourdomain.com/g' /etc/nginx/sites-available/vote-poll
+```
+
+Enable the site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/vote-poll /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Obtain SSL Certificate
+
+```bash
+sudo certbot --nginx -d yourdomain.com
+```
+
+Certbot will:
+
+- Verify domain ownership
+- Obtain certificate from Let's Encrypt
+- Configure Nginx for HTTPS
+- Set up auto-renewal
+
+When prompted:
+
+- Enter your email for renewal notices
+- Agree to terms of service
+- Choose to redirect HTTP to HTTPS (recommended)
+
+### Verify HTTPS
+
+Visit `https://yourdomain.com` — you should see the app with a valid certificate.
+
+---
+
+## Step 8: Set Up Automatic Database Backups
+
+### Create Backup Script
+
+```bash
+sudo tee /home/ubuntu/backup-db.sh << 'EOF'
 #!/bin/bash
-# backup.sh
 DATE=$(date +%Y%m%d_%H%M%S)
-cp votes.db "backups/votes_$DATE.db"
-aws s3 cp "backups/votes_$DATE.db" s3://your-backup-bucket/
+BACKUP_DIR=/home/ubuntu/backups
+mkdir -p $BACKUP_DIR
+
+# Copy database (SQLite safe copy while app is running)
+cp /home/ubuntu/vote_with_your_feet/data/votes.db "$BACKUP_DIR/votes_$DATE.db"
+
+# Keep only last 7 days of backups
+find $BACKUP_DIR -name "votes_*.db" -mtime +7 -delete
+
+echo "Backup completed: votes_$DATE.db"
+EOF
+
+chmod +x /home/ubuntu/backup-db.sh
 ```
 
-Run with cron:
+### Schedule Daily Backups
 
 ```bash
-0 */6 * * * /path/to/backup.sh
+# Add cron job for daily backup at 3 AM
+(crontab -l 2>/dev/null; echo "0 3 * * * /home/ubuntu/backup-db.sh >> /home/ubuntu/backup.log 2>&1") | crontab -
 ```
 
-## Scaling Considerations
+### Optional: Backup to S3
 
-For high traffic:
+For off-site backups, install AWS CLI and sync to S3:
 
-1. Use RDS PostgreSQL instead of SQLite
-2. Deploy multiple ECS tasks behind ALB
-3. Use ElastiCache for session management
-4. Consider API Gateway for rate limiting
+```bash
+sudo apt install -y awscli
+aws configure  # Enter your AWS credentials
 
-## Cost Estimates
+# Add to backup script:
+# aws s3 cp "$BACKUP_DIR/votes_$DATE.db" s3://your-backup-bucket/vote-poll/
+```
 
-- **Lightsail**: $5-10/month (simplest)
-- **EC2 t2.micro**: $8/month + $2 data transfer
-- **ECS Fargate**: $15-30/month
-- **RDS db.t3.micro**: $15/month
-- **ALB**: $16/month + data transfer
+---
 
-## Support
+## Step 9: Configure Auto-Start on Reboot
 
-For issues or questions, refer to AWS documentation:
+Docker Compose containers restart automatically (`restart: unless-stopped` in docker-compose.yml).
 
-- [Lightsail Containers](https://aws.amazon.com/lightsail/features/containers/)
-- [ECS Documentation](https://docs.aws.amazon.com/ecs/)
-- [EC2 User Guide](https://docs.aws.amazon.com/ec2/)
+Verify Nginx starts on boot:
+
+```bash
+sudo systemctl enable nginx
+```
+
+---
+
+## Step 10: Test Your Deployment
+
+### Access Points
+
+| Interface | URL |
+|-----------|-----|
+| Voting Display | `https://yourdomain.com/display` |
+| Admin Panel | `https://yourdomain.com/admin?secret=YOUR_ADMIN_SECRET` |
+| Health Check | `https://yourdomain.com/health` |
+| Vote API | `POST https://yourdomain.com/api/vote` |
+
+### Quick Test
+
+```bash
+# Check health endpoint
+curl https://yourdomain.com/health
+
+# Submit a test vote
+curl -X POST https://yourdomain.com/api/vote \
+  -H "Content-Type: application/json" \
+  -d '{"zone": 1}'
+```
+
+---
+
+## Maintenance
+
+### View Logs
+
+```bash
+cd ~/vote_with_your_feet
+docker-compose logs -f        # Application logs
+sudo tail -f /var/log/nginx/access.log  # Web access logs
+```
+
+### Update Application
+
+```bash
+cd ~/vote_with_your_feet
+git pull
+docker-compose down
+docker-compose build
+docker-compose up -d
+```
+
+### Restart Services
+
+```bash
+docker-compose restart         # Restart app
+sudo systemctl restart nginx   # Restart Nginx
+```
+
+### Renew SSL Certificate
+
+Certbot auto-renews certificates. To manually renew:
+
+```bash
+sudo certbot renew --dry-run   # Test renewal
+sudo certbot renew             # Actually renew
+```
+
+### Check Disk Space
+
+```bash
+df -h
+```
+
+The $5 Lightsail instance has 40 GB — plenty for SQLite and logs.
+
+---
+
+## Troubleshooting
+
+### App Not Responding
+
+```bash
+docker-compose ps              # Check container status
+docker-compose logs --tail=50  # Check recent logs
+docker-compose restart         # Restart container
+```
+
+### 502 Bad Gateway
+
+Nginx can't reach the app:
+
+```bash
+curl http://localhost:8080/health  # Test app directly
+docker-compose up -d               # Ensure container is running
+```
+
+### Certificate Issues
+
+```bash
+sudo certbot certificates          # Check certificate status
+sudo certbot renew --force-renewal # Force renewal if needed
+```
+
+### Database Issues
+
+```bash
+# Check database file exists and has data
+ls -la ~/vote_with_your_feet/data/
+sqlite3 ~/vote_with_your_feet/data/votes.db ".tables"
+```
+
+---
+
+## Security Checklist
+
+- [ ] Changed `ADMIN_SECRET` to a secure random string
+- [ ] Changed `SECRET_KEY` to a secure random string
+- [ ] HTTPS working (green padlock in browser)
+- [ ] SSH key downloaded and stored securely
+- [ ] Firewall allows only ports 22, 80, 443
+- [ ] Backups configured and tested
+
+---
+
+## Cost Breakdown
+
+| Item | Monthly Cost |
+|------|-------------|
+| Lightsail instance (1GB) | $5.00 |
+| Static IP (attached) | Free |
+| Let's Encrypt SSL | Free |
+| 40 GB SSD storage | Included |
+| 2 TB data transfer | Included |
+| **Total** | **$5.00** |
+
+For ~1,000 requests/day, the $5 instance is more than sufficient. The 2 TB transfer allowance covers roughly 20 million page loads per month.
+
+---
+
+## Alternative: Upgrade Path
+
+If you outgrow the $5 instance:
+
+1. **$10 instance** (2 GB RAM): Handles 10,000+ requests/day
+2. **Add RDS PostgreSQL**: For multi-instance deployments
+3. **Load balancer + multiple instances**: For high availability
+
+For this application's expected load, the $5 instance should serve you well indefinitely.

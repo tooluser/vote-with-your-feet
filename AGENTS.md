@@ -10,7 +10,7 @@ Notify me of ambiguities, make good assumptions, and ask questions as necessary 
 
 Each step in a plan is either an infrastructure/documentation step or an implementation step.
 
-### Infrastructure/Documentation Step
+### Explanation Step
 
 These steps describe changes that must be performed elsewhere, such as configurations at AWS or planned changes to documentation. They can be brief. They are not committed.
 

@@ -41,9 +41,9 @@ uv run python app/main.py
 
 The application will be available at:
 
-- Display: <http://localhost:5000/display>
-- Admin: <http://localhost:5000/admin?secret=YOUR_SECRET>
-- API: <http://localhost:5000/api/vote>
+- Display: <http://localhost:8080/display>
+- Admin: <http://localhost:8080/admin?secret=YOUR_SECRET>
+- API: <http://localhost:8080/api/vote>
 
 ### Docker
 
@@ -76,7 +76,7 @@ uv run pytest tests/test_models.py -v
 ### Cast a Vote
 
 ```bash
-curl -X POST http://localhost:5000/api/vote \
+curl -X POST http://localhost:8080/api/vote \
   -H "Content-Type: application/json" \
   -d '{"answer": "A"}'
 ```
@@ -84,7 +84,7 @@ curl -X POST http://localhost:5000/api/vote \
 ### Get Display Data
 
 ```bash
-curl http://localhost:5000/api/display/data
+curl http://localhost:8080/api/display/data
 ```
 
 ## Admin Interface

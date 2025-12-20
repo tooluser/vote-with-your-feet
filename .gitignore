@@ -25,3 +25,7 @@ htmlcov/
 
 # UV
 .uv/
+
+.env
+./data/
+
