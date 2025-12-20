@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - ADMIN_SECRET=${ADMIN_SECRET:-changeme}
       - DATABASE_URL=sqlite:////app/data/votes.db
