@@ -24,8 +24,9 @@ uv sync
 Set environment variables (or create a `.env` file):
 
 ```bash
-ADMIN_SECRET=your-secure-secret
-DATABASE_URL=sqlite:///data/votes.db  # For local dev; Docker uses /app/data/votes.db
+ADMIN_SECRET=your-secure-secret        # Required to access admin panel
+VOTE_PASSWORD=your-vote-password       # Required to cast votes via API
+DATABASE_URL=sqlite:///data/votes.db   # For local dev; Docker uses /app/data/votes.db
 SECRET_KEY=your-flask-secret-key
 ```
 
@@ -75,16 +76,28 @@ uv run pytest tests/test_models.py -v
 
 ### Cast a Vote
 
+Votes require the `X-Vote-Password` header and an `answer` query parameter (`A` or `B`):
+
 ```bash
-curl -X POST http://localhost:8080/api/vote \
-  -H "Content-Type: application/json" \
-  -d '{"answer": "A"}'
+curl -X POST "http://localhost:8080/vote?answer=A" \
+  -H "X-Vote-Password: your-vote-password"
 ```
+
+**Response:**
+
+```json
+{"success": true, "poll_id": 1}
+```
+
+**Errors:**
+
+- `403` — missing or incorrect `X-Vote-Password`
+- `400` — no active poll, missing answer, or invalid answer
 
 ### Get Display Data
 
 ```bash
-curl http://localhost:8080/api/display/data
+curl http://localhost:8080/display/data
 ```
 
 ## Admin Interface
