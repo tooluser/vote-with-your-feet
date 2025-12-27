@@ -9,6 +9,10 @@
 </head>
 
 <body>
+    <div class="nav-link">
+        <a href="{{ url_for('display_completed') }}">View Past Polls</a>
+    </div>
+
     {% if poll %}
     <div class="question-bar">
         <h1 id="question">{{ poll.question }}</h1>

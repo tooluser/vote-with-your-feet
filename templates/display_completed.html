@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/display_completed.css') }}">
 </head>
 <body>
+    <div class="nav-link">
+        <a href="{{ url_for('display') }}">Current Poll</a>
+    </div>
+
     {% if polls %}
     <div class="page-header">
         <h1>Past Poll Results</h1>

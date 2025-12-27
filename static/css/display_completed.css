@@ -149,6 +149,28 @@ body {
     opacity: 0.8;
 }
 
+.nav-link {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.nav-link a {
+    color: white;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    backdrop-filter: blur(10px);
+    transition: background 0.3s ease;
+}
+
+.nav-link a:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
 @media (max-width: 1024px) {
     .grid-container {
         grid-template-columns: 1fr;
