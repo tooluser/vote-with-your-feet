@@ -66,24 +66,39 @@
                         <td class="col-answer">
                             <div class="answer-cell">
                                 <span class="answer-text">{{ item.poll.answer_a }}</span>
-                                <span class="vote-count">{{ item.count_a }} votes</span>
+                                <a href="{{ url_for('admin.edit_votes', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="vote-count vote-count-link">{{ item.count_a }} votes</a>
                             </div>
                         </td>
                         <td class="col-answer">
                             <div class="answer-cell">
                                 <span class="answer-text">{{ item.poll.answer_b }}</span>
-                                <span class="vote-count">{{ item.count_b }} votes</span>
+                                <a href="{{ url_for('admin.edit_votes', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="vote-count vote-count-link">{{ item.count_b }} votes</a>
                             </div>
                         </td>
                         <td class="col-action">
-                            {% if item.poll.is_active %}
-                            <span class="status-active">Active</span>
-                            {% else %}
-                            <form method="POST"
-                                action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}">
-                                <button type="submit" class="btn-activate">Activate</button>
-                            </form>
-                            {% endif %}
+                            <div class="action-buttons">
+                                {% if item.poll.is_active %}
+                                <span class="status-active">Active</span>
+                                {% else %}
+                                <form method="POST"
+                                    action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn-activate">Activate</button>
+                                </form>
+                                {% endif %}
+                                <a href="{{ url_for('admin.edit_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="btn-edit">Edit</a>
+                                {% if not item.poll.is_active %}
+                                <form method="POST"
+                                    action="{{ url_for('admin.delete_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Are you sure you want to delete this poll and all its votes?');">
+                                    <button type="submit" class="btn-delete">Delete</button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
