@@ -54,5 +54,39 @@ def create_app(config_class=Config):
         active_poll = session.query(Poll).filter_by(is_active=True).first()
         return render_template('display_no_votes.html', poll=active_poll)
 
+    @app.route('/display-completed')
+    def display_completed():
+        """Display page showing completed polls in 2x2 grid"""
+        session = get_session()
+
+        # Get all inactive polls, ordered by most recent first
+        completed_polls = session.query(Poll).filter_by(
+            is_active=False
+        ).order_by(Poll.created_at.desc()).all()
+
+        # Get vote counts for each poll
+        polls_with_counts = []
+        for poll in completed_polls:
+            counts = poll.get_vote_counts(session)
+            total_votes = counts['A'] + counts['B']
+
+            # Calculate percentages for bar heights
+            if total_votes > 0:
+                percent_a = (counts['A'] / total_votes) * 100
+                percent_b = (counts['B'] / total_votes) * 100
+            else:
+                percent_a = 0
+                percent_b = 0
+
+            polls_with_counts.append({
+                'poll': poll,
+                'count_a': counts['A'],
+                'count_b': counts['B'],
+                'percent_a': percent_a,
+                'percent_b': percent_b
+            })
+
+        return render_template('display_completed.html', polls=polls_with_counts)
+
     return app
 
