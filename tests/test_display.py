@@ -44,6 +44,13 @@ def app():
         else:
             return render_template('display.html', poll=None)
 
+    @app.route('/display-no-votes')
+    def display_no_votes():
+        from flask import render_template
+        session = db_module._session
+        active_poll = session.query(Poll).filter_by(is_active=True).first()
+        return render_template('display_no_votes.html', poll=active_poll)
+
     yield app
 
     Session.remove()
@@ -95,6 +102,54 @@ def describe_display_interface():
         db_session.commit()
 
         response = client.get('/display')
+        assert response.status_code == 200
+        assert b'No active poll' in response.data or b'no poll' in response.data.lower()
+
+
+def describe_display_no_votes_interface():
+
+    def it_shows_active_poll_question_and_answers(client, db_session):
+        poll = Poll(question="What is best?", answer_a="Option A",
+                   answer_b="Option B", is_active=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.get('/display-no-votes')
+        assert response.status_code == 200
+        assert b'What is best?' in response.data
+        assert b'Option A' in response.data
+        assert b'Option B' in response.data
+
+    def it_does_not_show_vote_counts(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B", is_active=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="A")
+        vote3 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2, vote3])
+        db_session.commit()
+
+        response = client.get('/display-no-votes')
+        assert response.status_code == 200
+        assert b'vote-count' not in response.data
+
+    def it_does_not_show_vertical_bars(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B", is_active=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.get('/display-no-votes')
+        assert response.status_code == 200
+        assert b'vertical-bar' not in response.data
+
+    def it_shows_message_when_no_active_poll(client, db_session):
+        poll = Poll(question="Inactive", answer_a="A", answer_b="B", is_active=False)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.get('/display-no-votes')
         assert response.status_code == 200
         assert b'No active poll' in response.data or b'no poll' in response.data.lower()
 
