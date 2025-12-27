@@ -69,12 +69,49 @@ def describe_vote_api():
 
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert data["success"] is True
 
+        # Verify response format
+        assert "poll" in data
+        assert data["poll"]["id"] == poll.id
+
+        # Verify vote was recorded
         vote = db_session.query(Vote).first()
         assert vote is not None
         assert vote.poll_id == poll.id
         assert vote.answer == "A"
+
+    def it_returns_full_poll_data_in_response(client, db_session):
+        poll = Poll(
+            question="Test Question?",
+            answer_a="Option A",
+            answer_b="Option B",
+            is_active=True
+        )
+        db_session.add(poll)
+        db_session.commit()
+
+        # Add some existing votes
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="A")
+        vote3 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2, vote3])
+        db_session.commit()
+
+        response = client.post(
+            "/api/vote?answer=B", headers={"X-Vote-Password": "vote123"}
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+
+        # Should match display/data format
+        assert "poll" in data
+        assert data["poll"]["id"] == poll.id
+        assert data["poll"]["question"] == "Test Question?"
+        assert data["poll"]["answer_a"] == "Option A"
+        assert data["poll"]["answer_b"] == "Option B"
+        assert data["poll"]["count_a"] == 2
+        assert data["poll"]["count_b"] == 2  # 1 existing + 1 new
 
     def it_rejects_vote_when_no_active_poll(client, db_session):
         poll = Poll(question="Test?", answer_a="A", answer_b="B", is_active=False)

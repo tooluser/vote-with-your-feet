@@ -40,7 +40,7 @@ def vote():
     except:
         pass
 
-    return jsonify({"success": True, "poll_id": active_poll.id}), 200
+    return jsonify(format_poll_response(active_poll, session)), 200
 
 
 @api_bp.route("/display/data")
