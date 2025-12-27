@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Skill(superpowers:using-git-worktrees)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(git worktree:*)"
     ]
   }
 }
