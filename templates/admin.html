@@ -76,23 +76,27 @@
                             </div>
                         </td>
                         <td class="col-action">
-                            {% if item.poll.is_active %}
-                            <span class="status-active">Active</span>
-                            {% else %}
                             <div class="action-buttons">
+                                {% if item.poll.is_active %}
+                                <span class="status-active">Active</span>
+                                {% else %}
                                 <form method="POST"
                                     action="{{ url_for('admin.activate_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
                                     style="display:inline;">
                                     <button type="submit" class="btn-activate">Activate</button>
                                 </form>
+                                {% endif %}
+                                <a href="{{ url_for('admin.edit_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="btn-edit">Edit</a>
+                                {% if not item.poll.is_active %}
                                 <form method="POST"
                                     action="{{ url_for('admin.delete_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
                                     style="display:inline;"
                                     onsubmit="return confirm('Are you sure you want to delete this poll and all its votes?');">
                                     <button type="submit" class="btn-delete">Delete</button>
                                 </form>
+                                {% endif %}
                             </div>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}

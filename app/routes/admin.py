@@ -95,6 +95,51 @@ def delete_poll(poll_id):
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
 
+@admin_bp.route('/polls/<int:poll_id>/edit', methods=['GET'])
+@require_admin_secret
+def edit_poll(poll_id):
+    """Show edit form for a poll"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    return render_template('admin_edit_poll.html', poll=poll)
+
+
+@admin_bp.route('/polls/<int:poll_id>/edit', methods=['POST'])
+@require_admin_secret
+def update_poll(poll_id):
+    """Update poll text fields"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    question = request.form.get('question', '').strip()
+    answer_a = request.form.get('answer_a', '').strip()
+    answer_b = request.form.get('answer_b', '').strip()
+
+    if not question or not answer_a or not answer_b:
+        flash('All fields are required')
+        return render_template('admin_edit_poll.html', poll=poll)
+
+    poll.question = question
+    poll.answer_a = answer_a
+    poll.answer_b = answer_b
+
+    session.commit()
+
+    flash('Poll updated successfully')
+    return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+
 @admin_bp.route('/test')
 @require_admin_secret
 def test_route():
