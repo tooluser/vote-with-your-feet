@@ -1,8 +1,7 @@
 import pytest
-from flask import Flask
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
-from app.routes.api import api_bp
+from app import create_app
 from app.config import Config
 from app.models import Base, Poll, Vote
 from app import database as db_module
@@ -10,10 +9,11 @@ from app import database as db_module
 
 @pytest.fixture
 def app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+    # Use the production create_app function
+    app = create_app(Config)
     app.config['TESTING'] = True
 
+    # Replace the production database with an in-memory test database
     engine = create_engine('sqlite:///:memory:')
 
     @event.listens_for(engine, "connect")
@@ -25,66 +25,8 @@ def app():
     Base.metadata.create_all(engine)
     Session = scoped_session(sessionmaker(bind=engine))
 
+    # Override the database session with the test session
     db_module._session = Session
-
-    app.register_blueprint(api_bp, url_prefix='/api')
-
-    @app.route('/display')
-    def display():
-        from flask import render_template
-        session = db_module._session
-        active_poll = session.query(Poll).filter_by(is_active=True).first()
-
-        if active_poll:
-            counts = active_poll.get_vote_counts(session)
-            return render_template('display.html',
-                                 poll=active_poll,
-                                 count_a=counts['A'],
-                                 count_b=counts['B'])
-        else:
-            return render_template('display.html', poll=None)
-
-    @app.route('/display-no-votes')
-    def display_no_votes():
-        from flask import render_template
-        session = db_module._session
-        active_poll = session.query(Poll).filter_by(is_active=True).first()
-        return render_template('display_no_votes.html', poll=active_poll)
-
-    @app.route('/display-completed')
-    def display_completed():
-        """Display page showing completed polls in 2x2 grid"""
-        from flask import render_template
-        session = db_module._session
-
-        # Get all inactive polls, ordered by most recent first
-        completed_polls = session.query(Poll).filter_by(
-            is_active=False
-        ).order_by(Poll.created_at.desc()).all()
-
-        # Get vote counts for each poll
-        polls_with_counts = []
-        for poll in completed_polls:
-            counts = poll.get_vote_counts(session)
-            total_votes = counts['A'] + counts['B']
-
-            # Calculate percentages for bar heights
-            if total_votes > 0:
-                percent_a = (counts['A'] / total_votes) * 100
-                percent_b = (counts['B'] / total_votes) * 100
-            else:
-                percent_a = 0
-                percent_b = 0
-
-            polls_with_counts.append({
-                'poll': poll,
-                'count_a': counts['A'],
-                'count_b': counts['B'],
-                'percent_a': percent_a,
-                'percent_b': percent_b
-            })
-
-        return render_template('display_completed.html', polls=polls_with_counts)
 
     yield app
 
@@ -221,9 +163,9 @@ def describe_completed_polls_display():
         response = client.get("/display-completed")
         assert response.status_code == 200
         assert b"Past Poll?" in response.data
-        # Check that counts are present in some form
+        # Check that both vote counts are present
         assert b"2" in response.data  # count_a
-        assert b"1" in response.data or b"3" in response.data  # count_b or total
+        assert b"1" in response.data  # count_b
 
     def it_excludes_active_polls(client, db_session):
         active_poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
