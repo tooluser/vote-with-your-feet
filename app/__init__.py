@@ -79,7 +79,14 @@ def create_app(config_class=Config):
                 percent_b = 0
 
             polls_with_counts.append({
-                'poll': poll,
+                'poll': {
+                    'id': poll.id,
+                    'question': poll.question,
+                    'answer_a': poll.answer_a,
+                    'answer_b': poll.answer_b,
+                    'created_at': poll.created_at.isoformat(),
+                    'created_at_formatted': poll.created_at.strftime('%B %d, %Y')
+                },
                 'count_a': counts['A'],
                 'count_b': counts['B'],
                 'percent_a': percent_a,

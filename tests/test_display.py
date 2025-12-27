@@ -185,7 +185,7 @@ def describe_completed_polls_display():
 
         response = client.get("/display-completed")
         assert response.status_code == 200
-        assert b"No completed polls" in response.data or b"no polls" in response.data.lower()
+        assert b"No Completed Polls" in response.data or b"no polls" in response.data.lower()
 
     def it_orders_polls_by_most_recent(client, db_session):
         from datetime import datetime, timedelta
