@@ -1,8 +1,7 @@
 import pytest
-from flask import Flask
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
-from app.routes.api import api_bp
+from app import create_app
 from app.config import Config
 from app.models import Base, Poll, Vote
 from app import database as db_module
@@ -10,10 +9,11 @@ from app import database as db_module
 
 @pytest.fixture
 def app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+    # Use the production create_app function
+    app = create_app(Config)
     app.config['TESTING'] = True
 
+    # Replace the production database with an in-memory test database
     engine = create_engine('sqlite:///:memory:')
 
     @event.listens_for(engine, "connect")
@@ -25,31 +25,8 @@ def app():
     Base.metadata.create_all(engine)
     Session = scoped_session(sessionmaker(bind=engine))
 
+    # Override the database session with the test session
     db_module._session = Session
-
-    app.register_blueprint(api_bp, url_prefix='/api')
-
-    @app.route('/display')
-    def display():
-        from flask import render_template
-        session = db_module._session
-        active_poll = session.query(Poll).filter_by(is_active=True).first()
-
-        if active_poll:
-            counts = active_poll.get_vote_counts(session)
-            return render_template('display.html',
-                                 poll=active_poll,
-                                 count_a=counts['A'],
-                                 count_b=counts['B'])
-        else:
-            return render_template('display.html', poll=None)
-
-    @app.route('/display-no-votes')
-    def display_no_votes():
-        from flask import render_template
-        session = db_module._session
-        active_poll = session.query(Poll).filter_by(is_active=True).first()
-        return render_template('display_no_votes.html', poll=active_poll)
 
     yield app
 
@@ -152,4 +129,82 @@ def describe_display_no_votes_interface():
         response = client.get('/display-no-votes')
         assert response.status_code == 200
         assert b'No active poll' in response.data or b'no poll' in response.data.lower()
+
+
+def describe_completed_polls_display():
+
+    def it_shows_2x2_grid_of_completed_polls(client, db_session):
+        # Create 4 completed polls
+        poll1 = Poll(question="Completed 1?", answer_a="A1", answer_b="B1", is_active=False)
+        poll2 = Poll(question="Completed 2?", answer_a="A2", answer_b="B2", is_active=False)
+        poll3 = Poll(question="Completed 3?", answer_a="A3", answer_b="B3", is_active=False)
+        poll4 = Poll(question="Completed 4?", answer_a="A4", answer_b="B4", is_active=False)
+        db_session.add_all([poll1, poll2, poll3, poll4])
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+        assert b"Completed 1?" in response.data
+        assert b"Completed 2?" in response.data
+        assert b"Completed 3?" in response.data
+        assert b"Completed 4?" in response.data
+
+    def it_shows_vote_counts_for_completed_polls(client, db_session):
+        poll = Poll(question="Past Poll?", answer_a="Yes", answer_b="No", is_active=False)
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="A")
+        vote3 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2, vote3])
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+        assert b"Past Poll?" in response.data
+        # Check that both vote counts are present
+        assert b"2" in response.data  # count_a
+        assert b"1" in response.data  # count_b
+
+    def it_excludes_active_polls(client, db_session):
+        active_poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
+        completed_poll = Poll(question="Completed?", answer_a="C", answer_b="D", is_active=False)
+        db_session.add_all([active_poll, completed_poll])
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+        assert b"Completed?" in response.data
+        assert b"Active?" not in response.data
+
+    def it_shows_message_when_no_completed_polls(client, db_session):
+        active_poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
+        db_session.add(active_poll)
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+        assert b"No Completed Polls" in response.data or b"no polls" in response.data.lower()
+
+    def it_orders_polls_by_most_recent(client, db_session):
+        from datetime import datetime, timedelta
+
+        # Create polls with different timestamps
+        old_poll = Poll(question="Old?", answer_a="A", answer_b="B", is_active=False)
+        old_poll.created_at = datetime.utcnow() - timedelta(days=7)
+
+        recent_poll = Poll(question="Recent?", answer_a="C", answer_b="D", is_active=False)
+        recent_poll.created_at = datetime.utcnow() - timedelta(days=1)
+
+        db_session.add_all([old_poll, recent_poll])
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+
+        # Recent should appear before old in the HTML
+        recent_pos = response.data.find(b"Recent?")
+        old_pos = response.data.find(b"Old?")
+        assert recent_pos < old_pos
 

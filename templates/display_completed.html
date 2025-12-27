@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completed Polls</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/display_completed.css') }}">
+</head>
+<body>
+    <div class="nav-link">
+        <a href="{{ url_for('display') }}">Current Poll</a>
+    </div>
+
+    {% if polls %}
+    <div class="page-header">
+        <h1>Past Poll Results</h1>
+    </div>
+
+    <div class="grid-container" id="grid-container">
+        {% for item in polls[:4] %}
+        <div class="poll-card" data-poll-index="{{ loop.index0 }}">
+            <div class="poll-question">
+                <h2>{{ item.poll.question }}</h2>
+            </div>
+
+            <div class="poll-results">
+                <div class="answer-result answer-a">
+                    <div class="answer-label">{{ item.poll.answer_a }}</div>
+                    <div class="bar-container">
+                        <div class="bar bar-a" style="width: {{ item.percent_a }}%"></div>
+                    </div>
+                    <div class="vote-count">{{ item.count_a }} votes ({{ "%.0f"|format(item.percent_a) }}%)</div>
+                </div>
+
+                <div class="answer-result answer-b">
+                    <div class="answer-label">{{ item.poll.answer_b }}</div>
+                    <div class="bar-container">
+                        <div class="bar bar-b" style="width: {{ item.percent_b }}%"></div>
+                    </div>
+                    <div class="vote-count">{{ item.count_b }} votes ({{ "%.0f"|format(item.percent_b) }}%)</div>
+                </div>
+            </div>
+
+            <div class="poll-date">
+                {{ item.poll.created_at_formatted }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if polls|length > 4 %}
+    <div class="rotation-indicator">
+        <span id="current-page">1</span> / <span id="total-pages">{{ ((polls|length - 1) // 4) + 1 }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Hidden data for JavaScript rotation -->
+    <script>
+        const allPolls = {{ polls|tojson|safe }};
+    </script>
+    {% else %}
+    <div class="no-polls">
+        <h1>No Completed Polls</h1>
+        <p>Past poll results will appear here once polls are completed.</p>
+    </div>
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/display_completed.js') }}"></script>
+</body>
+</html>
