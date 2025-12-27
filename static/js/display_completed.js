@@ -7,12 +7,25 @@
 
     const POLLS_PER_PAGE = 4;
     const ROTATION_INTERVAL = 10000; // 10 seconds
+    const FADE_DURATION = 300; // milliseconds, matches CSS transition
 
     let currentPage = 0;
     const totalPages = Math.ceil(allPolls.length / POLLS_PER_PAGE);
 
     const gridContainer = document.getElementById('grid-container');
     const currentPageEl = document.getElementById('current-page');
+
+    // Defensive check for required DOM elements
+    if (!gridContainer || !currentPageEl) {
+        console.error('Required DOM elements not found for rotation');
+        return;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     function formatPercent(count_a, count_b) {
         const total = count_a + count_b;
@@ -39,12 +52,12 @@
         return `
             <div class="poll-card fade-in" data-poll-index="${index}">
                 <div class="poll-question">
-                    <h2>${pollData.poll.question}</h2>
+                    <h2>${escapeHtml(pollData.poll.question)}</h2>
                 </div>
 
                 <div class="poll-results">
                     <div class="answer-result answer-a">
-                        <div class="answer-label">${pollData.poll.answer_a}</div>
+                        <div class="answer-label">${escapeHtml(pollData.poll.answer_a)}</div>
                         <div class="bar-container">
                             <div class="bar bar-a" style="width: ${percents.percent_a}%"></div>
                         </div>
@@ -52,7 +65,7 @@
                     </div>
 
                     <div class="answer-result answer-b">
-                        <div class="answer-label">${pollData.poll.answer_b}</div>
+                        <div class="answer-label">${escapeHtml(pollData.poll.answer_b)}</div>
                         <div class="bar-container">
                             <div class="bar bar-b" style="width: ${percents.percent_b}%"></div>
                         </div>
@@ -89,7 +102,7 @@
 
             // Update page indicator
             currentPageEl.textContent = currentPage + 1;
-        }, 300); // Match CSS transition duration
+        }, FADE_DURATION);
     }
 
     // Start rotation
