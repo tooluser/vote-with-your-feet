@@ -42,7 +42,9 @@ uv run python app/main.py
 
 The application will be available at:
 
-- Display: <http://localhost:8080/display>
+- Display (with votes): <http://localhost:8080/display>
+- Display (no votes): <http://localhost:8080/display-no-votes>
+- Display (completed): <http://localhost:8080/display-completed>
 - Admin: <http://localhost:8080/admin?secret=YOUR_SECRET>
 - API: <http://localhost:8080/api/vote>
 
@@ -97,7 +99,7 @@ curl -X POST "http://localhost:8080/vote?answer=A" \
 ### Get Display Data
 
 ```bash
-curl http://localhost:8080/display/data
+curl http://localhost:8080/api/display/data
 ```
 
 ## Admin Interface
@@ -109,12 +111,24 @@ curl http://localhost:8080/display/data
 
 ## Display Interface
 
-Navigate to `/display` to see the live split-screen view with:
+Three display modes are available:
+
+### `/display` — Live Results
+
+Split-screen view showing real-time vote counts:
 
 - Poll question at the top
 - Answer A on the left (blue) with vote count
 - Answer B on the right (orange) with vote count
 - Real-time updates via WebSockets
+
+### `/display-no-votes` — Options Only
+
+Shows the active poll question and answer options without revealing vote counts. Useful for displaying the poll to voters before or during voting.
+
+### `/display-completed` — Historical Results
+
+A 2×2 grid of completed (inactive) polls with their final results. Each card shows the question, answers, vote counts, and percentage bars.
 
 ## Deployment
 
@@ -136,14 +150,20 @@ vote_with_your_feet/
 │       ├── admin.py         # Admin blueprint
 │       └── api.py           # Voting API + WebSocket
 ├── templates/
-│   ├── admin.html           # Admin interface
-│   └── display.html         # Display interface
+│   ├── admin.html           # Admin dashboard
+│   ├── admin_edit_poll.html # Edit poll form
+│   ├── admin_edit_votes.html # Edit vote counts
+│   ├── display.html         # Live results display
+│   ├── display_no_votes.html # Options-only display
+│   └── display_completed.html # Historical results grid
 ├── static/
 │   ├── css/
 │   │   ├── admin.css
-│   │   └── display.css
+│   │   ├── display.css
+│   │   └── display_completed.css
 │   └── js/
-│       └── display.js       # WebSocket client
+│       ├── display.js       # WebSocket client
+│       └── display_completed.js
 ├── tests/                   # Pytest test suite
 ├── docs/
 │   └── AWS_DEPLOYMENT.md
