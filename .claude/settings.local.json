@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Skill(superpowers:using-git-worktrees)"
+      "Skill(superpowers:using-git-worktrees)",
+      "Bash(git pull:*)"
     ]
   }
 }
