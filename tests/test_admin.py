@@ -227,3 +227,61 @@ def describe_poll_activation():
 
         response = client.post(f"/admin/polls/{poll.id}/activate")
         assert response.status_code == 403
+
+
+def describe_poll_deletion():
+
+    def it_deletes_poll_and_associated_votes(client, db_session):
+        poll = Poll(question="To Delete?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2])
+        db_session.commit()
+
+        poll_id = poll.id
+
+        response = client.post(
+            f"/admin/polls/{poll_id}/delete?secret=test-secret",
+            follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert "/admin" in response.location
+
+        # Verify poll is deleted
+        deleted_poll = db_session.query(Poll).filter_by(id=poll_id).first()
+        assert deleted_poll is None
+
+        # Verify votes are deleted (cascade)
+        votes = db_session.query(Vote).filter_by(poll_id=poll_id).all()
+        assert len(votes) == 0
+
+    def it_prevents_deleting_active_poll(client, db_session):
+        poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        poll_id = poll.id
+
+        response = client.post(
+            f"/admin/polls/{poll_id}/delete?secret=test-secret",
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+        assert b"Cannot delete active poll" in response.data or b"cannot delete" in response.data.lower()
+
+        # Verify poll still exists
+        poll_check = db_session.query(Poll).filter_by(id=poll_id).first()
+        assert poll_check is not None
+
+    def it_requires_authentication(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.post(f"/admin/polls/{poll.id}/delete")
+        assert response.status_code == 403

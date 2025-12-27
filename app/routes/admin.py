@@ -72,6 +72,29 @@ def activate_poll(poll_id):
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
 
+@admin_bp.route('/polls/<int:poll_id>/delete', methods=['POST'])
+@require_admin_secret
+def delete_poll(poll_id):
+    """Delete a poll and its associated votes"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    if poll.is_active:
+        flash('Cannot delete active poll. Deactivate it first.')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    session.delete(poll)
+    session.commit()
+
+    flash('Poll deleted successfully')
+    return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+
 @admin_bp.route('/test')
 @require_admin_secret
 def test_route():
