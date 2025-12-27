@@ -45,4 +45,4 @@ Follow the plan step by step.
 
 When executing an implementation step, always write tests first, and make sure they run (and fail). Then build implementation to make the tests pass. Do not remove tests to make tests pass, and only modify tests if they are actually wrong.
 
-When a step is complete and its tests pass, use 'git commit' to commit the changes, including the commit message and body from the step description.
+When a step is complete and its tests pass, use 'git commit' to commit the changes, including the commit message and body from the step description. NEVER include information about AI authorship in the commit in any way.
