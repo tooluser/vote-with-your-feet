@@ -29,6 +29,6 @@ htmlcov/
 # Worktrees
 .worktrees/
 
-.env
+.env*
 ./data/
 
