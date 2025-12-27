@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: Vote With Your Feet API
+  description: REST API for the voting system. Used by USB clients to submit votes.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://your-production-url.com
+    description: Production server
+
+paths:
+  /vote:
+    post:
+      summary: Submit a vote
+      description: Register a vote for the currently active poll
+      operationId: submitVote
+      security:
+        - votePassword: []
+      parameters:
+        - name: answer
+          in: query
+          required: true
+          description: The answer choice (A or B)
+          schema:
+            type: string
+            enum: [A, B]
+      responses:
+        '200':
+          description: Vote successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  poll_id:
+                    type: integer
+                    example: 1
+        '400':
+          description: Invalid request (missing answer, invalid answer, or no active poll)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Invalid or missing vote password
+
+  /display/data:
+    get:
+      summary: Get current poll data
+      description: Returns the currently active poll with vote counts
+      operationId: getDisplayData
+      responses:
+        '200':
+          description: Current poll data (or null if no active poll)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  poll:
+                    oneOf:
+                      - $ref: '#/components/schemas/Poll'
+                      - type: 'null'
+              examples:
+                activePoll:
+                  summary: Active poll exists
+                  value:
+                    poll:
+                      id: 1
+                      question: "Which is better?"
+                      answer_a: "Option A"
+                      answer_b: "Option B"
+                      count_a: 5
+                      count_b: 3
+                noPoll:
+                  summary: No active poll
+                  value:
+                    poll: null
+
+components:
+  securitySchemes:
+    votePassword:
+      type: apiKey
+      in: header
+      name: X-Vote-Password
+      description: Password required to submit votes
+
+  schemas:
+    Poll:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        answer_a:
+          type: string
+        answer_b:
+          type: string
+        count_a:
+          type: integer
+        count_b:
+          type: integer
+      required:
+        - id
+        - question
+        - answer_a
+        - answer_b
+        - count_a
+        - count_b
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Answer is required"
+

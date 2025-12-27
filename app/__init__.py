@@ -47,5 +47,12 @@ def create_app(config_class=Config):
         else:
             return render_template('display.html', poll=None)
 
+    @app.route('/display-no-votes')
+    def display_no_votes():
+        """Display page showing poll options without vote counts"""
+        session = get_session()
+        active_poll = session.query(Poll).filter_by(is_active=True).first()
+        return render_template('display_no_votes.html', poll=active_poll)
+
     return app
 
