@@ -26,6 +26,9 @@ htmlcov/
 # UV
 .uv/
 
+# Worktrees
+.worktrees/
+
 .env
 ./data/
 

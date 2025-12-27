@@ -37,6 +37,8 @@ Explain what will be done in each step. Be concise and organized. Use pseudocode
 # Plan Execution
 
 Each plan should have its own branch for execution.
+NEVER name branches with 'feat' or 'feature' or 'bug' etc. ALWAYS name them solely based on what the change does.
+
 All plans should be saved in ./plans/ as md files.
 
 Follow the plan step by step.
