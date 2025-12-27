@@ -384,3 +384,115 @@ def describe_poll_editing():
             data={"question": "New?", "answer_a": "A", "answer_b": "B"}
         )
         assert response.status_code == 403
+
+
+def describe_vote_editing():
+
+    def it_shows_vote_edit_form_for_poll(client, db_session):
+        poll = Poll(question="Poll?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="B")
+        vote3 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2, vote3])
+        db_session.commit()
+
+        response = client.get(
+            f"/admin/polls/{poll.id}/edit-votes?secret=test-secret"
+        )
+
+        assert response.status_code == 200
+        assert b"Poll?" in response.data
+        # Check current counts are shown
+        assert b"1" in response.data  # count_a
+        assert b"2" in response.data  # count_b
+
+    def it_updates_vote_counts_by_adding_removing_votes(client, db_session):
+        poll = Poll(question="Poll?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        db_session.add(vote1)
+        db_session.commit()
+
+        poll_id = poll.id
+
+        # Update to 3 A votes and 2 B votes
+        response = client.post(
+            f"/admin/polls/{poll_id}/edit-votes?secret=test-secret",
+            data={
+                "count_a": "3",
+                "count_b": "2"
+            },
+            follow_redirects=False
+        )
+
+        assert response.status_code == 302
+        assert "/admin" in response.location
+
+        db_session.expire_all()
+        counts = poll.get_vote_counts(db_session)
+        assert counts["A"] == 3
+        assert counts["B"] == 2
+
+    def it_validates_vote_counts_are_non_negative(client, db_session):
+        poll = Poll(question="Poll?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.post(
+            f"/admin/polls/{poll.id}/edit-votes?secret=test-secret",
+            data={
+                "count_a": "-1",
+                "count_b": "5"
+            },
+            follow_redirects=True
+        )
+
+        assert response.status_code == 200
+        assert b"non-negative" in response.data or b"positive" in response.data or b"invalid" in response.data.lower()
+
+    def it_allows_setting_counts_to_zero(client, db_session):
+        poll = Poll(question="Poll?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        vote1 = Vote(poll_id=poll.id, answer="A")
+        vote2 = Vote(poll_id=poll.id, answer="B")
+        db_session.add_all([vote1, vote2])
+        db_session.commit()
+
+        poll_id = poll.id
+
+        response = client.post(
+            f"/admin/polls/{poll_id}/edit-votes?secret=test-secret",
+            data={
+                "count_a": "0",
+                "count_b": "0"
+            },
+            follow_redirects=False
+        )
+
+        assert response.status_code == 302
+
+        db_session.expire_all()
+        counts = poll.get_vote_counts(db_session)
+        assert counts["A"] == 0
+        assert counts["B"] == 0
+
+    def it_requires_authentication(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.get(f"/admin/polls/{poll.id}/edit-votes")
+        assert response.status_code == 403
+
+        response = client.post(
+            f"/admin/polls/{poll.id}/edit-votes",
+            data={"count_a": "5", "count_b": "3"}
+        )
+        assert response.status_code == 403

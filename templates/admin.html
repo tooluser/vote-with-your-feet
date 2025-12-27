@@ -66,13 +66,15 @@
                         <td class="col-answer">
                             <div class="answer-cell">
                                 <span class="answer-text">{{ item.poll.answer_a }}</span>
-                                <span class="vote-count">{{ item.count_a }} votes</span>
+                                <a href="{{ url_for('admin.edit_votes', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="vote-count vote-count-link">{{ item.count_a }} votes</a>
                             </div>
                         </td>
                         <td class="col-answer">
                             <div class="answer-cell">
                                 <span class="answer-text">{{ item.poll.answer_b }}</span>
-                                <span class="vote-count">{{ item.count_b }} votes</span>
+                                <a href="{{ url_for('admin.edit_votes', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                   class="vote-count vote-count-link">{{ item.count_b }} votes</a>
                             </div>
                         </td>
                         <td class="col-action">

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.middleware.auth import require_admin_secret
 from app.database import get_session
-from app.models import Poll
+from app.models import Poll, Vote
 
 admin_bp = Blueprint('admin', __name__, template_folder='../../templates')
 
@@ -137,6 +137,85 @@ def update_poll(poll_id):
     session.commit()
 
     flash('Poll updated successfully')
+    return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+
+@admin_bp.route('/polls/<int:poll_id>/edit-votes', methods=['GET'])
+@require_admin_secret
+def edit_votes(poll_id):
+    """Show edit form for vote counts"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    counts = poll.get_vote_counts(session)
+
+    return render_template(
+        'admin_edit_votes.html',
+        poll=poll,
+        count_a=counts['A'],
+        count_b=counts['B']
+    )
+
+
+@admin_bp.route('/polls/<int:poll_id>/edit-votes', methods=['POST'])
+@require_admin_secret
+def update_votes(poll_id):
+    """Update vote counts by adding or removing Vote records"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    try:
+        new_count_a = int(request.form.get('count_a', 0))
+        new_count_b = int(request.form.get('count_b', 0))
+    except ValueError:
+        flash('Vote counts must be valid numbers')
+        counts = poll.get_vote_counts(session)
+        return render_template(
+            'admin_edit_votes.html',
+            poll=poll,
+            count_a=counts['A'],
+            count_b=counts['B']
+        )
+
+    if new_count_a < 0 or new_count_b < 0:
+        flash('Vote counts must be non-negative')
+        counts = poll.get_vote_counts(session)
+        return render_template(
+            'admin_edit_votes.html',
+            poll=poll,
+            count_a=counts['A'],
+            count_b=counts['B']
+        )
+
+    # Get current counts
+    current_counts = poll.get_vote_counts(session)
+    current_a = current_counts['A']
+    current_b = current_counts['B']
+
+    # Delete all existing votes for this poll
+    session.query(Vote).filter_by(poll_id=poll_id).delete()
+
+    # Add new votes to match desired counts
+    from datetime import datetime
+    for _ in range(new_count_a):
+        session.add(Vote(poll_id=poll_id, answer='A'))
+
+    for _ in range(new_count_b):
+        session.add(Vote(poll_id=poll_id, answer='B'))
+
+    session.commit()
+
+    flash('Vote counts updated successfully')
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
 
