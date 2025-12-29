@@ -81,14 +81,23 @@ uv run pytest tests/test_models.py -v
 Votes require the `X-Vote-Password` header and an `answer` query parameter (`A` or `B`):
 
 ```bash
-curl -X POST "http://localhost:8080/vote?answer=A" \
+curl -X POST "http://localhost:8080/api/vote?answer=A" \
   -H "X-Vote-Password: your-vote-password"
 ```
 
 **Response:**
 
 ```json
-{"success": true, "poll_id": 1}
+{
+  "poll": {
+    "id": 1,
+    "question": "Which is better?",
+    "answer_a": "Option A",
+    "answer_b": "Option B",
+    "count_a": 6,
+    "count_b": 3
+  }
+}
 ```
 
 **Errors:**

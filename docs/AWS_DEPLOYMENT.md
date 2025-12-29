@@ -129,6 +129,7 @@ mkdir -p data
 # Create environment file with secure secrets
 cat > .env << 'EOF'
 ADMIN_SECRET=CHANGE_THIS_TO_A_SECURE_RANDOM_STRING
+VOTE_PASSWORD=CHANGE_THIS_TO_A_VOTE_PASSWORD
 SECRET_KEY=CHANGE_THIS_TO_ANOTHER_RANDOM_STRING
 EOF
 ```
@@ -137,8 +138,9 @@ Generate secure random strings for the secrets:
 
 ```bash
 # Generate random secrets (copy these into your .env file)
-openssl rand -hex 32
-openssl rand -hex 32
+openssl rand -hex 32  # ADMIN_SECRET
+openssl rand -hex 16  # VOTE_PASSWORD (can be shorter for easier use)
+openssl rand -hex 32  # SECRET_KEY
 ```
 
 ### Start the Application
@@ -292,7 +294,9 @@ sudo systemctl enable nginx
 
 | Interface | URL |
 |-----------|-----|
-| Voting Display | `https://yourdomain.com/display` |
+| Display (live results) | `https://yourdomain.com/display` |
+| Display (options only) | `https://yourdomain.com/display-no-votes` |
+| Display (completed polls) | `https://yourdomain.com/display-completed` |
 | Admin Panel | `https://yourdomain.com/admin?secret=YOUR_ADMIN_SECRET` |
 | Health Check | `https://yourdomain.com/health` |
 | Vote API | `POST https://yourdomain.com/api/vote` |
@@ -303,10 +307,9 @@ sudo systemctl enable nginx
 # Check health endpoint
 curl https://yourdomain.com/health
 
-# Submit a test vote
-curl -X POST https://yourdomain.com/api/vote \
-  -H "Content-Type: application/json" \
-  -d '{"zone": 1}'
+# Submit a test vote (requires active poll and vote password)
+curl -X POST "https://yourdomain.com/api/vote?answer=A" \
+  -H "X-Vote-Password: YOUR_VOTE_PASSWORD"
 ```
 
 ---
@@ -323,13 +326,38 @@ sudo tail -f /var/log/nginx/access.log  # Web access logs
 
 ### Update Application
 
+When the repository has new commits:
+
 ```bash
 cd ~/vote_with_your_feet
-git pull
+
+# Pull latest changes
+git pull origin main
+
+# Rebuild and restart (database persists in ./data)
 docker-compose down
-docker-compose build
+docker-compose build --no-cache
 docker-compose up -d
+
+# Verify the update
+docker-compose ps
+curl http://localhost:8080/health
 ```
+
+If you have local changes that conflict with upstream:
+
+```bash
+# Stash local changes, pull, then reapply
+git stash
+git pull origin main
+git stash pop
+
+# Or discard local changes entirely
+git fetch origin
+git reset --hard origin/main
+```
+
+**Note**: The SQLite database in `./data/votes.db` is mounted as a volume and persists across container rebuilds. Your polls and votes are safe.
 
 ### Restart Services
 
@@ -396,6 +424,7 @@ sqlite3 ~/vote_with_your_feet/data/votes.db ".tables"
 ## Security Checklist
 
 - [ ] Changed `ADMIN_SECRET` to a secure random string
+- [ ] Changed `VOTE_PASSWORD` to a secure string
 - [ ] Changed `SECRET_KEY` to a secure random string
 - [ ] HTTPS working (green padlock in browser)
 - [ ] SSH key downloaded and stored securely

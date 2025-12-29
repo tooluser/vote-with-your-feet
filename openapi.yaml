@@ -5,9 +5,9 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8080/api
     description: Local development
-  - url: https://your-production-url.com
+  - url: https://your-production-url.com/api
     description: Production server
 
 paths:
@@ -32,14 +32,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  poll_id:
-                    type: integer
-                    example: 1
+                $ref: '#/components/schemas/PollResponse'
+              example:
+                poll:
+                  id: 1
+                  question: "Which is better?"
+                  answer_a: "Option A"
+                  answer_b: "Option B"
+                  count_a: 6
+                  count_b: 3
         '400':
           description: Invalid request (missing answer, invalid answer, or no active poll)
           content:
@@ -60,12 +61,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  poll:
-                    oneOf:
-                      - $ref: '#/components/schemas/Poll'
-                      - type: 'null'
+                $ref: '#/components/schemas/PollResponse'
               examples:
                 activePoll:
                   summary: Active poll exists
@@ -91,6 +87,14 @@ components:
       description: Password required to submit votes
 
   schemas:
+    PollResponse:
+      type: object
+      properties:
+        poll:
+          oneOf:
+            - $ref: '#/components/schemas/Poll'
+            - type: 'null'
+
     Poll:
       type: object
       properties:
@@ -123,4 +127,3 @@ components:
         error:
           type: string
           example: "Answer is required"
-
