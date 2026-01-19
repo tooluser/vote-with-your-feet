@@ -27,6 +27,12 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')
 
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        """Clean up database session after each request"""
+        session = get_session()
+        session.remove()
+
     @app.route('/')
     def index():
         """Redirect to display page"""
