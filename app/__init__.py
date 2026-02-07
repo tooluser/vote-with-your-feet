@@ -65,9 +65,9 @@ def create_app(config_class=Config):
         """Display page showing completed polls in 2x2 grid"""
         session = get_session()
 
-        # Get all inactive polls, ordered by most recent first
+        # Get all completed polls, ordered by most recent first
         completed_polls = session.query(Poll).filter_by(
-            is_active=False
+            is_completed=True
         ).order_by(Poll.created_at.desc()).all()
 
         # Get vote counts for each poll

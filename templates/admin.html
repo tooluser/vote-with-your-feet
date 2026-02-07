@@ -88,6 +88,13 @@
                                     <button type="submit" class="btn-activate">Activate</button>
                                 </form>
                                 {% endif %}
+                                <form method="POST"
+                                    action="{{ url_for('admin.toggle_complete', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn-complete {% if item.poll.is_completed %}btn-completed{% endif %}">
+                                        {% if item.poll.is_completed %}&#10003; Completed{% else %}Complete{% endif %}
+                                    </button>
+                                </form>
                                 <a href="{{ url_for('admin.edit_poll', poll_id=item.poll.id, secret=request.args.get('secret')) }}"
                                    class="btn-edit">Edit</a>
                                 {% if not item.poll.is_active %}
