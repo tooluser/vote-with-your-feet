@@ -39,6 +39,7 @@ def describe_poll_model():
         assert poll.answer_a == "Red"
         assert poll.answer_b == "Blue"
         assert poll.is_active is False
+        assert poll.is_completed is False
         assert isinstance(poll.created_at, datetime)
 
     def it_activates_and_deactivates_polls(db_session):

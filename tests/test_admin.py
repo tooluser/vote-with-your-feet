@@ -386,6 +386,51 @@ def describe_poll_editing():
         assert response.status_code == 403
 
 
+def describe_poll_completion():
+
+    def it_toggles_poll_completion_on(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        assert poll.is_completed is False
+
+        response = client.post(
+            f"/admin/polls/{poll.id}/toggle-complete?secret=test-secret",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+        db_session.expire_all()
+        updated_poll = db_session.query(Poll).filter_by(id=poll.id).first()
+        assert updated_poll.is_completed is True
+
+    def it_toggles_poll_completion_off(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B", is_completed=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.post(
+            f"/admin/polls/{poll.id}/toggle-complete?secret=test-secret",
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 302
+
+        db_session.expire_all()
+        updated_poll = db_session.query(Poll).filter_by(id=poll.id).first()
+        assert updated_poll.is_completed is False
+
+    def it_requires_authentication(client, db_session):
+        poll = Poll(question="Test?", answer_a="A", answer_b="B")
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.post(f"/admin/polls/{poll.id}/toggle-complete")
+        assert response.status_code == 403
+
+
 def describe_vote_editing():
 
     def it_shows_vote_edit_form_for_poll(client, db_session):

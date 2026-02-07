@@ -13,6 +13,7 @@ class Poll(Base):
     answer_a = Column(String, nullable=False)
     answer_b = Column(String, nullable=False)
     is_active = Column(Boolean, default=False, nullable=False)
+    is_completed = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     votes = relationship('Vote', back_populates='poll', cascade='all, delete-orphan')

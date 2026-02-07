@@ -135,10 +135,10 @@ def describe_completed_polls_display():
 
     def it_shows_2x2_grid_of_completed_polls(client, db_session):
         # Create 4 completed polls
-        poll1 = Poll(question="Completed 1?", answer_a="A1", answer_b="B1", is_active=False)
-        poll2 = Poll(question="Completed 2?", answer_a="A2", answer_b="B2", is_active=False)
-        poll3 = Poll(question="Completed 3?", answer_a="A3", answer_b="B3", is_active=False)
-        poll4 = Poll(question="Completed 4?", answer_a="A4", answer_b="B4", is_active=False)
+        poll1 = Poll(question="Completed 1?", answer_a="A1", answer_b="B1", is_completed=True)
+        poll2 = Poll(question="Completed 2?", answer_a="A2", answer_b="B2", is_completed=True)
+        poll3 = Poll(question="Completed 3?", answer_a="A3", answer_b="B3", is_completed=True)
+        poll4 = Poll(question="Completed 4?", answer_a="A4", answer_b="B4", is_completed=True)
         db_session.add_all([poll1, poll2, poll3, poll4])
         db_session.commit()
 
@@ -150,7 +150,7 @@ def describe_completed_polls_display():
         assert b"Completed 4?" in response.data
 
     def it_shows_vote_counts_for_completed_polls(client, db_session):
-        poll = Poll(question="Past Poll?", answer_a="Yes", answer_b="No", is_active=False)
+        poll = Poll(question="Past Poll?", answer_a="Yes", answer_b="No", is_completed=True)
         db_session.add(poll)
         db_session.commit()
 
@@ -167,16 +167,25 @@ def describe_completed_polls_display():
         assert b"2" in response.data  # count_a
         assert b"1" in response.data  # count_b
 
-    def it_excludes_active_polls(client, db_session):
-        active_poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
-        completed_poll = Poll(question="Completed?", answer_a="C", answer_b="D", is_active=False)
-        db_session.add_all([active_poll, completed_poll])
+    def it_excludes_non_completed_polls(client, db_session):
+        non_completed_poll = Poll(question="Not Completed?", answer_a="A", answer_b="B")
+        completed_poll = Poll(question="Completed?", answer_a="C", answer_b="D", is_completed=True)
+        db_session.add_all([non_completed_poll, completed_poll])
         db_session.commit()
 
         response = client.get("/display-completed")
         assert response.status_code == 200
         assert b"Completed?" in response.data
-        assert b"Active?" not in response.data
+        assert b"Not Completed?" not in response.data
+
+    def it_shows_active_and_completed_poll(client, db_session):
+        poll = Poll(question="Both?", answer_a="A", answer_b="B", is_active=True, is_completed=True)
+        db_session.add(poll)
+        db_session.commit()
+
+        response = client.get("/display-completed")
+        assert response.status_code == 200
+        assert b"Both?" in response.data
 
     def it_shows_message_when_no_completed_polls(client, db_session):
         active_poll = Poll(question="Active?", answer_a="A", answer_b="B", is_active=True)
@@ -191,10 +200,10 @@ def describe_completed_polls_display():
         from datetime import datetime, timedelta
 
         # Create polls with different timestamps
-        old_poll = Poll(question="Old?", answer_a="A", answer_b="B", is_active=False)
+        old_poll = Poll(question="Old?", answer_a="A", answer_b="B", is_completed=True)
         old_poll.created_at = datetime.utcnow() - timedelta(days=7)
 
-        recent_poll = Poll(question="Recent?", answer_a="C", answer_b="D", is_active=False)
+        recent_poll = Poll(question="Recent?", answer_a="C", answer_b="D", is_completed=True)
         recent_poll.created_at = datetime.utcnow() - timedelta(days=1)
 
         db_session.add_all([old_poll, recent_poll])

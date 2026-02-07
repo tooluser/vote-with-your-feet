@@ -140,6 +140,25 @@ def update_poll(poll_id):
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
 
+@admin_bp.route('/polls/<int:poll_id>/toggle-complete', methods=['POST'])
+@require_admin_secret
+def toggle_complete(poll_id):
+    """Toggle the is_completed flag on a poll"""
+    session = get_session()
+
+    poll = session.query(Poll).filter_by(id=poll_id).first()
+
+    if not poll:
+        flash('Poll not found')
+        return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+    poll.is_completed = not poll.is_completed
+    session.commit()
+
+    flash('Poll marked as completed' if poll.is_completed else 'Poll marked as incomplete')
+    return redirect(url_for('admin.index', secret=request.args.get('secret')))
+
+
 @admin_bp.route('/polls/<int:poll_id>/edit-votes', methods=['GET'])
 @require_admin_secret
 def edit_votes(poll_id):
