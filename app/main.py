@@ -27,5 +27,5 @@ def emit_poll_activated(poll_id):
     socketio.emit("poll_activated", {"poll_id": poll_id})
 
 
-if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=8080, debug=True, allow_unsafe_werkzeug=True)
+# Always run with socketio - this file is the application entrypoint
+socketio.run(app, host="0.0.0.0", port=8080, debug=True, allow_unsafe_werkzeug=True)
