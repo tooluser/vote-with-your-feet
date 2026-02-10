@@ -155,6 +155,12 @@ def toggle_complete(poll_id):
     poll.is_completed = not poll.is_completed
     session.commit()
 
+    try:
+        from app import socketio
+        socketio.emit('poll_completed', {'poll_id': poll_id, 'is_completed': poll.is_completed})
+    except:
+        pass
+
     flash('Poll marked as completed' if poll.is_completed else 'Poll marked as incomplete')
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 

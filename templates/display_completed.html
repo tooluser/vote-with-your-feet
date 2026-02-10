@@ -65,6 +65,15 @@
     </div>
     {% endif %}
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='js/display_completed.js') }}"></script>
+    <script>
+        // Listen for poll completion events and reload the page
+        const socket = io();
+        socket.on('poll_completed', function(data) {
+            console.log('Poll completed event received:', data);
+            location.reload();
+        });
+    </script>
 </body>
 </html>
