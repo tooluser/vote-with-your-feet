@@ -91,6 +91,13 @@ def delete_poll(poll_id):
     session.delete(poll)
     session.commit()
 
+    try:
+        from app import socketio
+        socketio.emit('poll_deleted', {'poll_id': poll_id})
+        print(f'Emitted poll_deleted event for poll {poll_id}')
+    except Exception as e:
+        print(f'Error emitting poll_deleted event: {e}')
+
     flash('Poll deleted successfully')
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
 
@@ -158,8 +165,9 @@ def toggle_complete(poll_id):
     try:
         from app import socketio
         socketio.emit('poll_completed', {'poll_id': poll_id, 'is_completed': poll.is_completed})
-    except:
-        pass
+        print(f'Emitted poll_completed event for poll {poll_id}, is_completed={poll.is_completed}')
+    except Exception as e:
+        print(f'Error emitting poll_completed event: {e}')
 
     flash('Poll marked as completed' if poll.is_completed else 'Poll marked as incomplete')
     return redirect(url_for('admin.index', secret=request.args.get('secret')))
