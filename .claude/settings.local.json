@@ -4,7 +4,15 @@
       "Skill(superpowers:using-git-worktrees)",
       "Bash(git pull:*)",
       "Bash(git branch:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(uv run pytest:*)"
     ]
   }
 }
