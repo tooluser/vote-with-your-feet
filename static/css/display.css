@@ -15,14 +15,15 @@ body {
 .question-bar {
     background-color: #1e293b;
     color: white;
-    padding: 20px;
+    padding: 1.5vh 3vw;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .question-bar h1 {
-    font-size: 32px;
+    font-size: clamp(2rem, 5vw, 8rem);
     font-weight: 600;
+    overflow-wrap: break-word;
 }
 
 .split-container {
@@ -35,7 +36,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px;
+    padding: 3vh 4vw;
     position: relative;
 }
 
@@ -73,13 +74,15 @@ body {
 }
 
 .answer-content h2 {
-    font-size: 48px;
+    font-size: clamp(2.5rem, 8vw, 15rem);
     font-weight: 700;
-    margin-bottom: 30px;
+    margin-bottom: 2vh;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .vote-count {
-    font-size: 120px;
+    font-size: clamp(5rem, 20vh, 30rem);
     font-weight: 900;
     line-height: 1;
 }
@@ -95,12 +98,12 @@ body {
 }
 
 .no-poll h1 {
-    font-size: 48px;
-    margin-bottom: 20px;
+    font-size: clamp(3rem, 6vw, 10rem);
+    margin-bottom: 2vh;
 }
 
 .no-poll p {
-    font-size: 24px;
+    font-size: clamp(1.5rem, 3vw, 5rem);
 }
 
 .nav-link {
